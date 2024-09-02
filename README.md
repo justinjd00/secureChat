@@ -1,1 +1,4 @@
 #
+branches:
+main
+dev
