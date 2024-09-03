@@ -3,15 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SecureChat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Centered Chat Window</title>
+    <link rel="stylesheet" href="../static/css/style.css">
 </head>
 <body>
-    <div class="chat-container">
-        <!-- test test 1 anzeigen  -->
-        <p>ioo</p>
+    <div class="centered-container">
+        <div class="chat-window">
+            <div class="chat-container" id="chatContainer">
+                <!-- Chat container Display für chat  -->
+            </div>
+        </div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type something to send">
+            <button onclick="sendMessage()">Send</button>
+        </div>
     </div>
-   <div> <!-- test test 2 schreiben --></div>
-    <script src="{{ url_for('static', filename='javascript/scripts.js') }}"></script>
+
+    <script src="../static/javascript/script.js"></script>
 </body>
 </html>

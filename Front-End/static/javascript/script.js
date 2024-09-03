@@ -1,9 +1,23 @@
-const socket = io.connect('http://' + document.domain + ':' + location.port);
+function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    const messageText = messageInput.value.trim();
 
-socket.on('connect', function() {
-    socket.send('User has connected!');
-});
+    if (messageText !== "") {
 
-socket.on('message', function(msg) {
-    console.log(msg);
-});
+
+        //new message
+        const newMessage = document.createElement('div');
+        newMessage.classList.add('message', 'sent');
+        newMessage.textContent = `You: ${messageText}`;
+
+        //from input tp container
+        const chatContainer = document.getElementById('chatContainer');
+        chatContainer.appendChild(newMessage);
+
+        // simple scroll the chat
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        //new delete after new message
+        messageInput.value = "";
+    }
+}
