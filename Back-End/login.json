@@ -1,0 +1,26 @@
+{
+    "users": [
+        {
+            "id": "e9db3ab5-87da-4f28-80e7-210bcc1ed078",
+            "username": "Alice",
+            "password": "mypassword",
+            "email": "alice@example.com",
+            "registration_date": "2024-09-04 19:47:21",
+            "last_login": "2024-09-04 19:47:38",
+            "ip_address": "127.0.0.1",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "4a305df9-793a-42cb-91cd-0fa19afe4155",
+            "username": "Bob",
+            "password": "test",
+            "email": "bob@example.com",
+            "registration_date": "2024-09-04 19:48:14",
+            "last_login": null,
+            "ip_address": "127.0.0.1",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        }
+    ]
+}
