@@ -7,11 +7,9 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 app = FastAPI()
 
-# GraphQL-Router hinzufügen
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
- 
- 
+
 # App starten
 if __name__ == "__main__":
     import uvicorn

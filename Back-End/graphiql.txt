@@ -1,0 +1,119 @@
+﻿Benutzerregistrierung (Mutation)
+mutation {
+  register(username: "Alice", password: "mypassword", email: "alice@example.com")
+}
+antwort:
+{
+  "data": {
+    "register": "Benutzer Alice erfolgreich registriert."
+  }
+}
+Benutzeranmeldung (Mutation)
+mutation {
+  login(username: "Alice", password: "mypassword")
+}
+antwort:
+{
+  "data": {
+    "login": "Benutzer Alice erfolgreich angemeldet."
+  }
+}
+
+gibt eine Liste aller registrierten Benutzer zurück:
+{
+  allUsers {
+    id
+    username
+    email
+    lastLogin
+  }
+}
+antwort:
+{
+  "data": {
+    "allUsers": [
+      {
+        "id": "1",
+        "username": "Alice",
+        "email": "alice@example.com",
+        "lastLogin": null
+      },
+      {
+        "id": "2",
+        "username": "Bob",
+        "email": "bob@example.com",
+        "lastLogin": null
+      }
+    ]
+  }
+}
+
+
+ Benutzer nach Benutzernamen abfragen (Query)
+ 
+ {
+   getUserByUsername(username: "Alice") {
+     id
+     username
+     email
+     lastLogin
+   }
+ }
+
+antwort:
+{
+  "data": {
+    "getUserByUsername": {
+      "id": "1",
+      "username": "Alice",
+      "email": "alice@example.com",
+      "lastLogin": null
+    }
+  }
+}
+
+Letzte Anmeldung eines Benutzers abfragen (Query)
+{
+  lastLogin(username: "Alice")
+}
+
+antwort:
+{
+  "data": {
+    "lastLogin": "2024-09-04 14:50:00"
+  }
+}
+
+
+Nachrichten zwischen zwei Benutzern abfragen (Query)
+{
+  messagesBetween(user1: "Alice", user2: "Bob") {
+    id
+    content
+    sender
+    receiver
+    timestamp
+  }
+}
+
+antwort:
+{
+  "data": {
+    "messagesBetween": [
+      {
+        "id": "1",
+        "content": "Hello Bob!",
+        "sender": "Alice",
+        "receiver": "Bob",
+        "timestamp": "2024-09-04 14:25:00"
+      },
+      {
+        "id": "2",
+        "content": "Hi Alice!",
+        "sender": "Bob",
+        "receiver": "Alice",
+        "timestamp": "2024-09-04 14:26:00"
+      }
+    ]
+  }
+}
