@@ -1,0 +1,18 @@
+#####   BACK END #####
+# FastAPI Framework für Web APIs
+fastapi==0.103.1
+# Uvicorn für den ASGI-Server
+uvicorn==0.22.0
+# Strawberry GraphQL für GraphQL-Schema und Abfragen
+strawberry-graphql==0.138.2
+# JWT-Handling für Authentifizierung (Token-Erstellung und Verifizierung)
+PyJWT==2.8.0
+# Passlib für sichere Passwort-Hashing
+passlib==1.7.4
+# Starlette, das unter FastAPI läuft (wird automatisch mit FastAPI installiert)
+starlette==0.27.0
+# JSON Handling für die Speicherung von Benutzerdaten
+jsonschema==4.18.3
+# Python-Dotenv für Umgebungsvariablen (falls benötigt)
+python-dotenv==1.0.0
+#####   BACK END #####
