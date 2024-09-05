@@ -10,10 +10,10 @@ app = FastAPI()
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
-# App starten
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8006)
+
 # Info:
 # Starte die App und gehe auf http://127.0.0.1:8000/graphql (passe jeweils Host und port von oben an), dann kann du die subscription und 
 # mutation jeweils angeben (subscription ist sozusagen ein listener der live wartet dass nachrichten versendet werden und mutation für nachricht eingabe
