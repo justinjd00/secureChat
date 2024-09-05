@@ -94,7 +94,29 @@
             "password": "$2b$12$1BkUKOv4nWPDupWQMMVEnu.iDJfqcm4HqGkDATSeY0XqOevtKlYF6",
             "email": "dada@example.com",
             "registration_date": "2024-09-05 16:15:36",
-            "last_login": "2024-09-05 16:27:57",
+            "last_login": "2024-09-05 21:56:30",
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "e63e5ab7-dd7c-4632-8220-537b9f728652",
+            "username": "dada3",
+            "password": "$2b$12$6Bqzbok3czncWW1uLwJf2.d.a0h1cLj3xZ210ExOUU8mbwKWBgbFS",
+            "email": "dada3@example.com",
+            "registration_date": "2024-09-05 21:21:55",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "0b999542-aed1-4cd0-b1bf-b788d79783f7",
+            "username": "phil",
+            "password": "$2b$12$AP4b.UkB0vxRDv3s.IDbve9h/9CIO9T.aoM17UhsKXRFJUP4Kku4e",
+            "email": "phil@example.com",
+            "registration_date": "2024-09-05 21:57:39",
+            "last_login": "2024-09-05 21:57:49",
             "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
             "os": null

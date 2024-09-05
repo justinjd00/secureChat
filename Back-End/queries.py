@@ -2,6 +2,8 @@
 from typing import List
 from datetime import datetime
 import psycopg2
+from config import get_db
+from models import User as UserModel, Message as MessageModel
 # Dummy-Daten 
 users_data = [
     {"id": "1", "username": "Alice", "email": "alice@example.com", "last_login": "2024-09-04 14:23"},
@@ -95,3 +97,4 @@ class Query:
         conn.close()
     
         return [LoggedInUser(id=row[0], username=row[1], login_time=row[2].strftime("%Y-%m-%d %H:%M:%S")) for row in rows]
+
