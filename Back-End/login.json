@@ -1,0 +1,81 @@
+{
+    "users": [
+        {
+            "id": "e9db3ab5-87da-4f28-80e7-210bcc1ed078",
+            "username": "Alice",
+            "password": "mypassword",
+            "email": "alice@example.com",
+            "registration_date": "2024-09-04 19:47:21",
+            "last_login": "2024-09-05 00:11:21",
+            "ip_address": "127.0.0.1",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "4a305df9-793a-42cb-91cd-0fa19afe4155",
+            "username": "Bob",
+            "password": "test",
+            "email": "bob@example.com",
+            "registration_date": "2024-09-04 19:48:14",
+            "last_login": null,
+            "ip_address": "127.0.0.1",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "65b8cc61-fd58-4531-843d-9fd6935a771b",
+            "username": "Laura",
+            "password": "$2b$12$SkfOAa91StUuIIr/qeSBHO5ErpmUOrQUlokRAjlvJ3pG8M/df.Z3K",
+            "email": "laura@example.com",
+            "registration_date": "2024-09-05 00:15:22",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "03ee2ba8-794e-4f7e-9c86-c25cad5986e8",
+            "username": "Laura2",
+            "password": "$2b$12$ZHC/Z2bDoXIteKrjXEbWrejMbdW14DZhhjix1uYF/yGPIWZVBaV/S",
+            "email": "laura2@example.com",
+            "registration_date": "2024-09-05 00:22:51",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "c6bc040d-a638-4010-92c5-153b8cdc3c6a",
+            "username": "Erick",
+            "password": "$2b$12$kdQczHwhibekJdlSxsgHZuVRhDtATadXTZF7ykbVWUAcRhbNUl93C",
+            "email": "nerd@example.com",
+            "registration_date": "2024-09-05 00:57:30",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "ba2cb5fb-09ed-4ad9-b233-5b1437422712",
+            "username": "Albano",
+            "password": "$2b$12$5cHKi2qa.pvMYjTXnkDuKOvAZeUKLd.qexxq0W7q3MNcc2p7tLiqa",
+            "email": "junk@example.com",
+            "registration_date": "2024-09-05 01:00:26",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "6ba71b16-bb4c-4d05-b08b-33bd8e5fc65f",
+            "username": "Ersoy",
+            "password": "$2b$12$oGI3AX7HKaUBhwlVEVmdQe.LvSKvy6yqxvToALTsRTo88jM3JypCi",
+            "email": "anime@example.com",
+            "registration_date": "2024-09-05 02:59:32",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        }
+    ]
+}
