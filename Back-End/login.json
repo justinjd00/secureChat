@@ -76,6 +76,17 @@
             "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
             "os": null
+        },
+        {
+            "id": "88a808f0-c7a3-4628-a120-3141a434080e",
+            "username": "AliceMonteor",
+            "password": "$2b$12$hRB6qYzDXDyQOchc6ZeKoOC16gI.zOBM1TSNADqc6xLHxkbD7fHZe",
+            "email": "alicemonteor@example.com",
+            "registration_date": "2024-09-05 12:46:04",
+            "last_login": "2024-09-05 14:53:03",
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+            "os": null
         }
     ]
 }
