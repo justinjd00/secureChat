@@ -12,7 +12,7 @@ app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8013)
+    uvicorn.run(app, host="127.0.0.1", port=8006)
 
 # Info:
 # Starte die App und gehe auf http://127.0.0.1:8000/graphql (passe jeweils Host und port von oben an), dann kann du die subscription und 

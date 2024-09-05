@@ -1,5 +1,5 @@
 ﻿import strawberry
-from auth.authentication import register_user, login_user
+from auth.authentication import register_user, login_user, logout_user
 from fastapi import Request
 from strawberry.types import Info
 from auth.jwt_handler import create_access_token
@@ -35,3 +35,11 @@ class Mutation:
         access_token = create_access_token(data={"sub": user["username"]})  # Korrigiert: user["username"]
 
         return LoginResponse(token=access_token)
+
+    @strawberry.mutation
+    def logout(self, user_id: str) -> str:
+        """
+        Diese Mutation loggt einen Benutzer aus und entfernt ihn aus der LoggedInUsers-Tabelle.
+        """
+        logout_user(user_id)
+        return f"Benutzer mit ID {user_id} wurde erfolgreich ausgeloggt."
