@@ -25,7 +25,6 @@ gibt eine Liste aller registrierten Benutzer zurück:
     id
     username
     email
-    lastLogin
   }
 }
 antwort:

@@ -19,7 +19,7 @@ class User:
     id: str
     username: str
     email: str
-    last_login: str
+#   last_login: str
 
 # Nachrichten-Typ
 @strawberry.type
@@ -49,8 +49,22 @@ class Query:
 
     @strawberry.field
     def all_users(self) -> List[User]:
-        return [User(**user) for user in users_data]
+        # Verbindung zur Datenbank herstellen
+        conn = psycopg2.connect('postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/SecureChat?sslmode=require')
+        cur = conn.cursor()
 
+        # SQL-Abfrage, um alle Benutzer aus der Tabelle 'Users' zu holen
+        cur.execute('SELECT id, username, email FROM "Users"')
+        rows = cur.fetchall()
+
+        # Liste von User-Objekten erstellen
+        users = [User(id=row[0], username=row[1], email=row[2]) for row in rows]
+
+        # Verbindung schließen
+        cur.close()
+        conn.close()
+
+        return users
     @strawberry.field
     def messages_between(self, user1: str, user2: str) -> List[Message]:
         messages = [
