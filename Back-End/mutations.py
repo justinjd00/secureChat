@@ -3,7 +3,11 @@ from auth.authentication import register_user, login_user
 from fastapi import Request
 from strawberry.types import Info
 from auth.jwt_handler import create_access_token
-from types import LoginResponse
+
+# Definiere das Rückgabe-Objekt für den Login
+@strawberry.type
+class LoginResponse:
+    token: str
 
 @strawberry.type
 class Mutation:
@@ -16,17 +20,7 @@ class Mutation:
 
         return register_user(username, password, email, ip_address, user_agent, os)
 
-
-
-    # Definiere das Rückgabe-Objekt für den Login
-    @strawberry.type
-    class LoginResponse:
-        token: str
-
-    # Mutation anpassen
-
     @strawberry.mutation
-
     def login(self, username: str, password: str, info: Info) -> LoginResponse:
         request: Request = info.context['request']
         ip_address = request.client.host
@@ -41,5 +35,3 @@ class Mutation:
         access_token = create_access_token(data={"sub": user["username"]})  # Korrigiert: user["username"]
 
         return LoginResponse(token=access_token)
-
-
