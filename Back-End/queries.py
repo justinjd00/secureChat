@@ -1,7 +1,7 @@
 ﻿import strawberry
 from typing import List
 from datetime import datetime
-
+import psycopg2
 # Dummy-Daten 
 users_data = [
     {"id": "1", "username": "Alice", "email": "alice@example.com", "last_login": "2024-09-04 14:23"},
@@ -29,6 +29,12 @@ class Message:
     sender: str
     receiver: str
     timestamp: str
+
+@strawberry.type
+class LoggedInUser:
+    id: str
+    username: str
+    login_time: str
 
 # Query-Klasse
 @strawberry.type
@@ -60,3 +66,18 @@ class Query:
         if not user:
             raise ValueError(f"Benutzer {username} nicht gefunden")
         return user["last_login"]
+    
+    @strawberry.field
+    def get_logged_in_users(self) -> List[LoggedInUser]:
+        # Verbindung zur Datenbank herstellen
+        conn = psycopg2.connect('postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/SecureChat?sslmode=require')
+        cur = conn.cursor()
+    
+        # Alle eingeloggten Benutzer abfragen
+        cur.execute('SELECT id, username, login_time FROM "LoggedInUsers"')
+        rows = cur.fetchall()
+    
+        cur.close()
+        conn.close()
+    
+        return [LoggedInUser(id=row[0], username=row[1], login_time=row[2].strftime("%Y-%m-%d %H:%M:%S")) for row in rows]
