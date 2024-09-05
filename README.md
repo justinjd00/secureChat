@@ -9,27 +9,27 @@ https://cryptopals.com/
 
 
 ### 3. BE 
-Service URI
-    postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/defaultdb?sslmode=require
-Database name
-    SecureChat
+Service URI<br>
+    ---------postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/defaultdb?sslmode=require<br>
+Database name<br>
+    ---------SecureChat<br>
 
-Tables:
-	"Users" ("" nicht vergessen)
-Host
-    pg-3ec1ff15-justinjd00-e424.e.aivencloud.com
-Port
-    16693
-User
-    avnadmin
-Password
-    AVNS_wwY6Tw8KwsNrL5cWf5Z
+Tables:<br>
+    ---------"Users" ("" nicht vergessen)<br>
+Host<br>
+    ---------pg-3ec1ff15-justinjd00-e424.e.aivencloud.com<br>
+Port<br>
+    ---------16693<br>
+User<br>
+    ---------avnadmin<br>
+Password<br>
+    ---------AVNS_wwY6Tw8KwsNrL5cWf5Z<br>
 
 #### 3.1 Database Control mit PSQL
-* öffne psql
-* gebe alles ein
-* dann kann man SQL Befehle ausführen
+* öffne psql<br>
+* gebe alles ein<br>
+* dann kann man SQL Befehle ausführen<br>
 
 
-Dokumentation:
-https://aiven.io/docs/products/postgresql/get-started
+Dokumentation:<br>
+https://aiven.io/docs/products/postgresql/get-started<br>

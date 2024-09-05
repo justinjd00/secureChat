@@ -1,4 +1,4 @@
-﻿import json
+import json
 import psycopg2
 
 # Funktion, um Benutzer in die Tabelle 'Users' einzufügen
