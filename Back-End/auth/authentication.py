@@ -79,4 +79,5 @@ def login_user(username: str, password: str, ip_address: str):
     save_users(users_data)
     print(f"[INFO] Benutzerdaten für {username} erfolgreich gespeichert.")
 
-    return f"Benutzer {username} erfolgreich angemeldet."
+    # Gib das Benutzer-Dictionary zurück
+    return user
