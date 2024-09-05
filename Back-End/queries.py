@@ -2,6 +2,8 @@
 from typing import List
 from datetime import datetime
 import psycopg2
+from config import get_db
+from models import User as UserModel, Message as MessageModel
 # Dummy-Daten 
 users_data = [
     {"id": "1", "username": "Alice", "email": "alice@example.com", "last_login": "2024-09-04 14:23"},
@@ -19,7 +21,7 @@ class User:
     id: str
     username: str
     email: str
-    last_login: str
+#   last_login: str
 
 # Nachrichten-Typ
 @strawberry.type
@@ -49,8 +51,22 @@ class Query:
 
     @strawberry.field
     def all_users(self) -> List[User]:
-        return [User(**user) for user in users_data]
+        # Verbindung zur Datenbank herstellen
+        conn = psycopg2.connect('postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/SecureChat?sslmode=require')
+        cur = conn.cursor()
 
+        # SQL-Abfrage, um alle Benutzer aus der Tabelle 'Users' zu holen
+        cur.execute('SELECT id, username, email FROM "Users"')
+        rows = cur.fetchall()
+
+        # Liste von User-Objekten erstellen
+        users = [User(id=row[0], username=row[1], email=row[2]) for row in rows]
+
+        # Verbindung schließen
+        cur.close()
+        conn.close()
+
+        return users
     @strawberry.field
     def messages_between(self, user1: str, user2: str) -> List[Message]:
         messages = [
@@ -81,3 +97,4 @@ class Query:
         conn.close()
     
         return [LoggedInUser(id=row[0], username=row[1], login_time=row[2].strftime("%Y-%m-%d %H:%M:%S")) for row in rows]
+

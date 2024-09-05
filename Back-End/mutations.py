@@ -3,12 +3,21 @@ from auth.authentication import register_user, login_user, logout_user
 from fastapi import Request
 from strawberry.types import Info
 from auth.jwt_handler import create_access_token
-
+from config import get_db
+from models import User as UserModel, Message as MessageModel
+from datetime import datetime
+from uuid import uuid4
 # Definiere das Rückgabe-Objekt für den Login
 @strawberry.type
 class LoginResponse:
     token: str
-
+@strawberry.type
+class SendMessageResponse:
+    id: str
+    content: str
+    sender: str
+    receiver: str
+    timestamp: str
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -43,3 +52,37 @@ class Mutation:
         """
         logout_user(user_id)
         return f"Benutzer mit ID {user_id} wurde erfolgreich ausgeloggt."
+
+    @strawberry.mutation
+    def send_message(self, sender_username: str, receiver_username: str, content: str, info: Info) -> SendMessageResponse:
+        """
+        Diese Mutation sendet eine Nachricht von einem Benutzer zu einem anderen und speichert sie in der Datenbank.
+        """
+        request: Request = info.context['request']
+        db = next(get_db())
+        print(db.info)
+        # Holen der Sender- und Empfänger-IDs
+        sender = db.query(UserModel).filter(UserModel.username == sender_username).first()
+        receiver = db.query(UserModel).filter(UserModel.username == receiver_username).first()
+
+        if not sender or not receiver:
+            raise Exception("Sender oder Empfänger nicht gefunden.")
+
+        # Nachricht speichern
+        new_message = MessageModel(
+            id=str(uuid4()),
+            content=content,
+            sender_id=sender.id,
+            receiver_id=receiver.id,
+            timestamp=datetime.now()
+        )
+        db.add(new_message)
+        db.commit()
+
+        return SendMessageResponse(
+            id=new_message.id,
+            content=new_message.content,
+            sender=sender.username,
+            receiver=receiver.username,
+            timestamp=new_message.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        )
