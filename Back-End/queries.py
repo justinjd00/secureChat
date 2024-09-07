@@ -1,9 +1,12 @@
 ﻿import strawberry
 from typing import List
 from datetime import datetime
+from sqlalchemy.orm import Session
 import psycopg2
 from config import get_db
 from models import User as UserModel, Message as MessageModel
+from datetime import datetime
+from config import get_db
 # Dummy-Daten 
 users_data = [
     {"id": "1", "username": "Alice", "email": "alice@example.com", "last_login": "2024-09-04 14:23"},
@@ -68,13 +71,37 @@ class Query:
 
         return users
     @strawberry.field
-    def messages_between(self, user1: str, user2: str) -> List[Message]:
-        messages = [
-            Message(**message) for message in messages_data
-            if (message["sender"] == user1 and message["receiver"] == user2) or
-               (message["sender"] == user2 and message["receiver"] == user1)
+    def messages_between(self, user1: str, user2: str, info) -> List[Message]:
+        """
+        Diese Query gibt alle Nachrichten zwischen zwei Benutzern zurück, basierend auf den Benutzernamen.
+        """
+        # Hole die DB-Sitzung
+        db: Session = next(get_db())
+    
+        # Finde die User-IDs anhand der Benutzernamen
+        sender = db.query(UserModel).filter(UserModel.username == user1).first()
+        receiver = db.query(UserModel).filter(UserModel.username == user2).first()
+    
+        if not sender or not receiver:
+            raise Exception("Sender oder Empfänger nicht gefunden.")
+    
+        # Abfrage der Nachrichten zwischen den beiden Benutzern
+        messages = db.query(MessageModel).filter(
+            ((MessageModel.sender_id == sender.id) & (MessageModel.receiver_id == receiver.id)) |
+            ((MessageModel.sender_id == receiver.id) & (MessageModel.receiver_id == sender.id))
+        ).all()
+    
+        # Nachrichtentyp instanziieren und zurückgeben
+        return [
+            Message(
+                id=str(message.id),
+                content=message.content,
+                sender=sender.username if message.sender_id == sender.id else receiver.username,
+                receiver=receiver.username if message.receiver_id == receiver.id else sender.username,
+                timestamp=message.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            )
+            for message in messages
         ]
-        return messages
 
     @strawberry.field
     def last_login(self, username: str) -> str:

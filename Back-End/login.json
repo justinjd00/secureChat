@@ -116,9 +116,42 @@
             "password": "$2b$12$AP4b.UkB0vxRDv3s.IDbve9h/9CIO9T.aoM17UhsKXRFJUP4Kku4e",
             "email": "phil@example.com",
             "registration_date": "2024-09-05 21:57:39",
-            "last_login": "2024-09-05 21:57:49",
+            "last_login": "2024-09-07 10:31:44",
             "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "os": null
+        },
+        {
+            "id": "8d7d4f16-fb28-4704-93b6-f37015bf339f",
+            "username": "phi2l",
+            "password": "$2b$12$5cFq.3I42Sf9paQDKRr77eVzJ/t6cZgyAAq2YAFRGp2AWji.BXE0q",
+            "email": "phil2@example.com",
+            "registration_date": "2024-09-07 10:33:46",
+            "last_login": null,
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
+            "os": null
+        },
+        {
+            "id": "0efd8398-5c42-4659-937c-d22d09803276",
+            "username": "alice",
+            "password": "$2b$12$baI53AxMRMniHw1uyRthfe0JyHw3fa8lLZTU9dLWeeUApDRmNxyhm",
+            "email": "alicealice@example.com",
+            "registration_date": "2024-09-07 11:02:35",
+            "last_login": "2024-09-07 11:03:09",
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
+            "os": null
+        },
+        {
+            "id": "b2e01eae-c02b-41e9-933c-c64428ffb3ef",
+            "username": "bob",
+            "password": "$2b$12$a44RGwaKo62oJhUn.StBwO5UtHOz4td/Hm8HEXNiKqk1NuGXLw5Xy",
+            "email": "bobbob@example.com",
+            "registration_date": "2024-09-07 11:02:45",
+            "last_login": "2024-09-07 11:03:02",
+            "ip_address": "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0",
             "os": null
         }
     ]
