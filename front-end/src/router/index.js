@@ -1,13 +1,8 @@
-import { createRouter, createWebHashHistory } from 'vue-router';
+import {createRouter, createWebHashHistory} from 'vue-router';
 const routes = [
     {
-        path: '/login',
-        name: 'Auth',
-        component: () => import('@/views/Auth.vue')
-    },
-    {
         path: '/',
-        component: () => import('@/views/Home.vue'),
+        component: () => import('../views/Home.vue'),
         meta: {
             requiresAuth: true
         },
@@ -15,7 +10,7 @@ const routes = [
             {
                 path: '',
                 name: 'Welcome',
-                component: () => import('@/components/Welcome.vue')
+                component: () => import('../components/Welcome.vue')
             },
         ]
     },
