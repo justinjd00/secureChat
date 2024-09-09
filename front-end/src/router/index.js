@@ -1,25 +1,43 @@
-import {createRouter, createWebHashHistory} from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router'
+import Home from '../views/Home.vue'
+import Signin from '../views/SignIn.vue'
+import Signup from '../views/SignUp.vue'
+import Auth from '../views/Auth.vue'
+
 const routes = [
     {
         path: '/',
-        component: () => import('../views/Home.vue'),
+        name: 'Signin',
+        component: Signin
+    },
+    {
+        path: '/signup',
+        name: 'Signup',
+        component: Signup
+    },
+    {
+        path: '/auth',
+        name: 'Auth',
+        component: Auth,
         meta: {
             requiresAuth: true
-        },
-        children: [
-            {
-                path: '',
-                name: 'Welcome',
-                component: () => import('../components/Welcome.vue')
-            },
-        ]
-    },
-
-];
+        }
+    }
+]
 
 const router = createRouter({
-    history: createWebHashHistory(import.meta.env.BASE_URL),
+    history: createWebHistory(),
     routes
-});
+})
+
+// Add navigation guard to handle routes that require authentication
+router.beforeEach((to, from, next) => {
+    const isAuthenticated = !!localStorage.getItem('token')  // Replace with your auth logic
+    if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
+        next({ name: 'Signin' })
+    } else {
+        next()
+    }
+})
 
 export default router

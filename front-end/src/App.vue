@@ -5,7 +5,13 @@
 </template>
 
 <script>
+import ChatWindow from './components/MainChat.vue';
 
+export default {
+  components: {
+    ChatWindow,
+  },
+};
 </script>
 <style lang="scss" scoped>
 </style>
