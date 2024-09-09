@@ -3,8 +3,15 @@ import Home from '../views/Home.vue'
 import Signin from '../views/SignIn.vue'
 import Signup from '../views/SignUp.vue'
 import Auth from '../views/Auth.vue'
+import MainChat from '../components/MainChat.vue';
 
 const routes = [
+    // other routes
+    {
+        path: '/mainchat',
+        name: 'MainChat',
+        component: MainChat
+    },
     {
         path: '/',
         name: 'Signin',

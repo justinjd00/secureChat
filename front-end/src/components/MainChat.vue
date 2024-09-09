@@ -70,20 +70,22 @@ body {
   font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
   background-color: #f0f0f0;
 }
 
 .centered-container {
-  width: 300px;
-  height: 600px;
-  border: 5px solid black;
+  width: 350px;
+  height: 700px;
   display: flex;
   flex-direction: column;
   background-color: white;
+  border-radius: 30px; /* Rounded corners like an iPhone */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adding a soft shadow */
+  position: relative;
 }
 
 .chat-window {
@@ -91,6 +93,9 @@ body {
   flex-direction: column;
   height: 100%;
   background-color: lightblue;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  overflow: hidden;
 }
 
 .chat-container {
@@ -105,6 +110,8 @@ body {
   padding: 10px;
   border-top: 1px solid #ddd;
   background-color: lightgrey;
+  border-bottom-left-radius: 30px;
+  border-bottom-right-radius: 30px;
 }
 
 input[type="text"] {
