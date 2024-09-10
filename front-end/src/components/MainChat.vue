@@ -1,10 +1,12 @@
 <template>
   <div class="outer-container">
+    <!-- Left sidebar for contact list -->
     <div class="left-sidebar">
       <h3>Contacts</h3>
-      <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact">
+      <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
       <button @click="addContact">Add Contact</button>
 
+      <!-- List of contacts (newly added ones) -->
       <ul>
         <li v-for="(contact, index) in contacts" :key="index" @click="selectContact(contact)">
           {{ contact }}
@@ -12,17 +14,30 @@
       </ul>
     </div>
 
+    <!-- Chat window showing open chats (with message input allowed) -->
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
-          <!-- Chat container Display for chat -->
+          <div v-if="!selectedContact" class="no-chat">No chat selected</div>
+          <div v-if="selectedContact" class="chat-header">
+            Chat with {{ selectedContact }}
+          </div>
+
+          <!-- Messages sent to the selected contact -->
           <div v-for="(message, index) in messages" :key="index" class="message">
             {{ message }}
           </div>
         </div>
       </div>
-      <div class="input-container">
-        <input type="text" v-model="messageInput" placeholder="Type something to send" @keyup.enter="sendMessage" />
+
+      <!-- Message input only if a contact is selected -->
+      <div v-if="selectedContact" class="input-container">
+        <input
+          type="text"
+          v-model="messageInput"
+          placeholder="Type your message"
+          @keyup.enter="sendMessage"
+        />
         <button @click="sendMessage">Send</button>
       </div>
     </div>
@@ -30,55 +45,37 @@
 </template>
 
 <script>
-import { io } from 'socket.io-client';
-
 export default {
   data() {
     return {
-      socket: null,
-      messageInput: '',
-      messages: [],
       newContact: '',
       contacts: [], // Initially empty contact list
-      selectedContact: null // Selected contact for chat
+      selectedContact: null, // Selected contact for chat
+      messageInput: '', // Input field for new message
+      messages: [], // Array of messages to be displayed in chat window
     };
-  },
-  mounted() {
-    // Connect to the Socket.io server
-    this.socket = io('http://' + document.domain + ':' + location.port);
-
-    this.socket.on('connect', () => {
-      this.socket.send('User has connected!');
-    });
-
-    this.socket.on('message', (msg) => {
-      this.messages.push(msg);
-      this.scrollChatToBottom();
-    });
   },
   methods: {
     addContact() {
       if (this.newContact) {
         this.contacts.push(this.newContact);
+        this.selectedContact = this.newContact; // Automatically select the contact
         this.newContact = ''; // Clear input field
       }
     },
     selectContact(contact) {
       this.selectedContact = contact;
-      // You can later add code to load chat history based on contact
+      this.messages = []; // Reset messages when a new contact is selected
     },
     sendMessage() {
-      if (this.messageInput.trim() && this.selectedContact) {
-        // Emit message via socket
-        this.socket.send(`To ${this.selectedContact}: ${this.messageInput}`);
-
-        // Add the message to the messages array
-        this.messages.push(`You to ${this.selectedContact}: ${this.messageInput}`);
+      if (this.messageInput.trim() !== "") {
+        // Push the message to the messages array
+        this.messages.push(`You: ${this.messageInput}`);
 
         // Clear the input field
         this.messageInput = "";
 
-        // Scroll the chat to the bottom
+        // Scroll to the bottom after sending the message
         this.scrollChatToBottom();
       }
     },
@@ -121,6 +118,7 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   outline: none;
+  color: black; /* Input text color */
 }
 
 .left-sidebar button {
@@ -185,6 +183,18 @@ export default {
   border-top-right-radius: 30px;
 }
 
+.chat-header {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.no-chat {
+  text-align: center;
+  font-style: italic;
+  color: grey;
+}
+
 .input-container {
   display: flex;
   padding: 10px;
@@ -199,6 +209,7 @@ input[type="text"] {
   border-radius: 20px;
   border: 1px solid #ddd;
   outline: none;
+  color: black; /* Input text color */
 }
 
 button {
