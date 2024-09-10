@@ -56,12 +56,12 @@
 export default {
   data() {
     return {
-      newContact: '',       // Input for adding a new contact
-      contacts: [],         // List of contacts
+      newContact: '', // Input for adding a new contact
+      contacts: [], // List of contacts
       selectedContact: null, // Currently selected contact
-      messageInput: '',     // Input field for the message
-      messages: {},         // Store messages for each contact
-      holdTimeout: null     // Used for long press to delete contact
+      messageInput: '', // Input field for the message
+      messages: {}, // Store messages for each contact
+      holdTimeout: null // Used for long press to delete contact
     };
   },
   computed: {
@@ -84,10 +84,11 @@ export default {
             // Contact exists in the database
             this.contacts.push(this.newContact);
             if (!this.messages[this.newContact]) {
-              this.messages[this.newContact] = [];  // Initialize message array
+              this.messages[this.newContact] = []; // Initialize message array
             }
-            this.selectedContact = this.newContact;  // Automatically select the new contact
-            this.newContact = '';  // Clear the input field
+            this.selectedContact = this.newContact; // Automatically select the new contact
+            this.newContact = ''; // Clear the input field
+            this.saveContacts(); // Save contacts to localStorage
           } else {
             // User does not exist in the database
             alert("This user does not exist.");
@@ -108,7 +109,8 @@ export default {
         }
         // Add message to the message list
         this.messages[this.selectedContact].push(`You: ${this.messageInput}`);
-        this.messageInput = "";  // Clear input field
+        this.messageInput = ""; // Clear input field
+        this.saveMessages(); // Save messages to localStorage
 
         // Scroll to the bottom of the chat window
         this.scrollChatToBottom();
@@ -131,41 +133,41 @@ export default {
       clearTimeout(this.holdTimeout);
     },
     deleteContact(contact) {
-      this.contacts = this.contacts.filter(c => c !== contact);  // Remove contact from list
+      this.contacts = this.contacts.filter(c => c !== contact); // Remove contact from list
       if (this.selectedContact === contact) {
-        this.selectedContact = null;  // Clear the selected contact if it's deleted
+        this.selectedContact = null; // Clear the selected contact if it's deleted
       }
-      delete this.messages[contact];  // Remove messages related to the contact
-    }
-  },
-  mounted() {
-    // Fetch and store existing contacts and messages from the backend (or local storage) when the page is loaded
-    this.loadContacts();
-  },
-  methods: {
+      delete this.messages[contact]; // Remove messages related to the contact
+      this.saveContacts(); // Save contacts to localStorage
+      this.saveMessages(); // Save messages to localStorage
+    },
+    saveContacts() {
+      // Save contacts to localStorage
+      localStorage.setItem('contacts', JSON.stringify(this.contacts));
+    },
+    saveMessages() {
+      // Save messages to localStorage
+      localStorage.setItem('messages', JSON.stringify(this.messages));
+    },
     loadContacts() {
-      // Fetch contacts from backend or local storage to persist contacts after login/logout
-      const storedContacts = localStorage.getItem("contacts");
+      // Load contacts from localStorage if they exist
+      const storedContacts = localStorage.getItem('contacts');
       if (storedContacts) {
         this.contacts = JSON.parse(storedContacts);
       }
     },
-    saveContacts() {
-      // Save contacts to local storage so they persist after login/logout
-      localStorage.setItem("contacts", JSON.stringify(this.contacts));
-    },
-    addContact() {
-      if (this.newContact) {
-        // Add the contact and save to local storage
-        this.contacts.push(this.newContact);
-        this.saveContacts();
-        this.newContact = '';
+    loadMessages() {
+      // Load messages from localStorage if they exist
+      const storedMessages = localStorage.getItem('messages');
+      if (storedMessages) {
+        this.messages = JSON.parse(storedMessages);
       }
-    },
-    deleteContact(contact) {
-      this.contacts = this.contacts.filter(c => c !== contact);
-      this.saveContacts();
     }
+  },
+  mounted() {
+    // Load contacts and messages from localStorage on page load
+    this.loadContacts();
+    this.loadMessages();
   }
 };
 </script>
