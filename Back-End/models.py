@@ -36,3 +36,18 @@ class Message(Base):
 
     def __repr__(self):
         return f"<Message(sender={self.sender.username}, receiver={self.receiver.username}, content={self.content})>"
+
+# New Contact table to store user connections
+class Contact(Base):
+    __tablename__ = "contacts"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("Users.id"), nullable=False)
+    contact_id = Column(UUID(as_uuid=True), ForeignKey("Users.id"), nullable=False)
+    created_at = Column(DateTime, nullable=False)
+
+    user = relationship("User", foreign_keys=[user_id])
+    contact = relationship("User", foreign_keys=[contact_id])
+
+    def __repr__(self):
+        return f"<Contact(user_id={self.user_id}, contact_id={self.contact_id})>"
