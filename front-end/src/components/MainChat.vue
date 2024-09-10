@@ -8,7 +8,15 @@
 
       <!-- List of contacts (newly added ones) -->
       <ul>
-        <li v-for="(contact, index) in contacts" :key="index" @click="selectContact(contact)">
+        <li
+          v-for="(contact, index) in sortedContacts"
+          :key="index"
+          :class="{ selected: contact === selectedContact }"
+          @click="selectContact(contact)"
+          @mousedown="startHold(contact)"
+          @mouseup="endHold"
+          @mouseleave="endHold"
+        >
           {{ contact }}
         </li>
       </ul>
@@ -24,7 +32,7 @@
           </div>
 
           <!-- Messages sent to the selected contact -->
-          <div v-for="(message, index) in messages" :key="index" class="message">
+          <div v-for="(message, index) in currentMessages" :key="index" class="message">
             {{ message }}
           </div>
         </div>
@@ -49,28 +57,45 @@ export default {
   data() {
     return {
       newContact: '',
-      contacts: [], // Initially empty contact list
-      selectedContact: null, // Selected contact for chat
+      contacts: [], // List of contacts
+      selectedContact: null, // Currently selected contact for chat
       messageInput: '', // Input field for new message
-      messages: [], // Array of messages to be displayed in chat window
+      messages: {}, // Object to store messages for each contact
+      holdTimeout: null // Used to track long press for deleting a contact
     };
+  },
+  computed: {
+    sortedContacts() {
+      // Sort contacts alphabetically
+      return [...this.contacts].sort((a, b) => a.localeCompare(b));
+    },
+    currentMessages() {
+      // Return messages for the currently selected contact, or an empty array if no messages exist
+      return this.messages[this.selectedContact] || [];
+    }
   },
   methods: {
     addContact() {
       if (this.newContact) {
         this.contacts.push(this.newContact);
+        if (!this.messages[this.newContact]) {
+          // Initialize empty message array for the new contact
+          this.messages[this.newContact] = [];
+        }
         this.selectedContact = this.newContact; // Automatically select the contact
         this.newContact = ''; // Clear input field
       }
     },
     selectContact(contact) {
       this.selectedContact = contact;
-      this.messages = []; // Reset messages when a new contact is selected
     },
     sendMessage() {
       if (this.messageInput.trim() !== "") {
-        // Push the message to the messages array
-        this.messages.push(`You: ${this.messageInput}`);
+        // Push the message to the messages object for the selected contact
+        if (!this.messages[this.selectedContact]) {
+          this.messages[this.selectedContact] = [];
+        }
+        this.messages[this.selectedContact].push(`You: ${this.messageInput}`);
 
         // Clear the input field
         this.messageInput = "";
@@ -83,7 +108,26 @@ export default {
       const chatContainer = this.$el.querySelector('#chatContainer');
       chatContainer.scrollTop = chatContainer.scrollHeight;
     },
-  },
+    startHold(contact) {
+      // Start tracking hold time for deleting the contact
+      this.holdTimeout = setTimeout(() => {
+        if (confirm(`Do you want to delete the contact "${contact}"?`)) {
+          this.deleteContact(contact);
+        }
+      }, 1000); // 1 second hold for triggering delete
+    },
+    endHold() {
+      // Clear the timeout if the user releases the mouse before 1 second
+      clearTimeout(this.holdTimeout);
+    },
+    deleteContact(contact) {
+      this.contacts = this.contacts.filter(c => c !== contact);
+      if (this.selectedContact === contact) {
+        this.selectedContact = null; // Clear the selected contact if it's deleted
+      }
+      delete this.messages[contact]; // Remove the messages for the deleted contact
+    }
+  }
 };
 </script>
 
@@ -143,11 +187,17 @@ export default {
   margin-bottom: 10px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s ease, padding-left 0.3s ease;
+  color: black; /* Contact text color */
 }
 
 .left-sidebar li:hover {
   background-color: #ddd;
+}
+
+.left-sidebar li.selected {
+  background-color: darkgray; /* Darker background for selected contact */
+  padding-left: 10px; /* Move selected contact slightly to the right */
 }
 
 /* Chat window styling */
