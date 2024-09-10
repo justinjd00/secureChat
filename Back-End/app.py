@@ -127,7 +127,22 @@ def add_contact(user_id: uuid.UUID, contact_username: str, db: Session = Depends
 
     return {"message": f"Contact {contact_username} added successfully"}
 
+
+@app.get("/get_contacts/{user_id}")
+def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
+    # Holen Sie alle Kontakte für den Benutzer aus der Datenbank
+    contacts = db.query(Contact).filter_by(user_id=user_id).all()
+
+    if not contacts:
+        return {"message": "No contacts found"}
+
+    contact_list = []
+    for contact in contacts:
+        contact_user = db.query(User).filter_by(id=contact.contact_id).first()
+        contact_list.append({"username": contact_user.username})
+
+    return contact_list
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8082)
+    uvicorn.run(app, host="127.0.0.1", port=8083)
