@@ -8,9 +8,10 @@ from auth.authentication import register_user, pwd_context, verify_password, \
 import sys
 import os
 from sqlalchemy.orm import Session
-from config import get_db
-from models import User
 from datetime import datetime
+from models import User, Contact
+from config import get_db
+import uuid
 
 app = FastAPI()
 
@@ -105,7 +106,28 @@ def check_user(username: str, db: Session = Depends(get_db)):
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
+
+@app.post("/add_contact")
+def add_contact(user_id: uuid.UUID, contact_username: str, db: Session = Depends(get_db)):
+    # Find the contact in the Users table
+    contact = db.query(User).filter(User.username == contact_username).first()
+
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    # Check if contact already exists for this user
+    existing_contact = db.query(Contact).filter_by(user_id=user_id, contact_id=contact.id).first()
+    if existing_contact:
+        raise HTTPException(status_code=400, detail="Contact already added")
+
+    # Add the new contact
+    new_contact = Contact(user_id=user_id, contact_id=contact.id)
+    db.add(new_contact)
+    db.commit()
+
+    return {"message": f"Contact {contact_username} added successfully"}
+
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8081)
+    uvicorn.run(app, host="127.0.0.1", port=8082)
