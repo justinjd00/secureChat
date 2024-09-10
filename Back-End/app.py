@@ -91,10 +91,21 @@ def signin(user_data: UserLogin, db: Session = Depends(get_db)):
     return {"message": "Login erfolgreich", "user_id": user_in_db.id}
 
 
+@app.get("/check_user/{username}")
+def check_user(username: str, db: Session = Depends(get_db)):
+    # Query the database for a user with the given username
+    user = db.query(User).filter(User.username == username).first()
+
+    if user:
+        return {"message": f"User {username} exists."}
+    else:
+        raise HTTPException(status_code=404, detail=f"User {username} not found.")
+
+
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8079)
+    uvicorn.run(app, host="127.0.0.1", port=8081)

@@ -75,15 +75,21 @@ export default {
     }
   },
   methods: {
-    addContact() {
+    async addContact() {
       if (this.newContact) {
-        this.contacts.push(this.newContact);
-        if (!this.messages[this.newContact]) {
-          // Initialize empty message array for the new contact
-          this.messages[this.newContact] = [];
+        // Send a request to the backend to check if the contact exists
+        const response = await fetch(`/api/check_user/${this.newContact}`);
+        if (response.ok) {
+          this.contacts.push(this.newContact);
+          if (!this.messages[this.newContact]) {
+            // Initialize empty message array for the new contact
+            this.messages[this.newContact] = [];
+          }
+          this.selectedContact = this.newContact; // Automatically select the contact
+          this.newContact = ''; // Clear input field
+        } else {
+          alert("This user does not exist.");
         }
-        this.selectedContact = this.newContact; // Automatically select the contact
-        this.newContact = ''; // Clear input field
       }
     },
     selectContact(contact) {
