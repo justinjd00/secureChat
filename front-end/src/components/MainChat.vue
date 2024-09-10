@@ -6,7 +6,7 @@
       <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
       <button @click="addContact">Add Contact</button>
 
-      <!-- List of contacts (newly added ones) -->
+      <!-- List of contacts -->
       <ul>
         <li
           v-for="(contact, index) in sortedContacts"
@@ -56,12 +56,12 @@
 export default {
   data() {
     return {
-      newContact: '',
-      contacts: [], // List of contacts
-      selectedContact: null, // Currently selected contact for chat
-      messageInput: '', // Input field for new message
-      messages: {}, // Object to store messages for each contact
-      holdTimeout: null // Used to track long press for deleting a contact
+      newContact: '',       // Input for adding a new contact
+      contacts: [],         // List of contacts
+      selectedContact: null, // Currently selected contact
+      messageInput: '',     // Input field for the message
+      messages: {},         // Store messages for each contact
+      holdTimeout: null     // Used for long press to delete contact
     };
   },
   computed: {
@@ -70,25 +70,31 @@ export default {
       return [...this.contacts].sort((a, b) => a.localeCompare(b));
     },
     currentMessages() {
-      // Return messages for the currently selected contact, or an empty array if no messages exist
+      // Return messages for the currently selected contact
       return this.messages[this.selectedContact] || [];
     }
   },
   methods: {
     async addContact() {
       if (this.newContact) {
-        // Send a request to the backend to check if the contact exists
-        const response = await fetch(`/api/check_user/${this.newContact}`);
-        if (response.ok) {
-          this.contacts.push(this.newContact);
-          if (!this.messages[this.newContact]) {
-            // Initialize empty message array for the new contact
-            this.messages[this.newContact] = [];
+        try {
+          // Send a request to the backend to check if the contact exists
+          const response = await fetch(`/api/check_user/${this.newContact}`);
+          if (response.ok) {
+            // Contact exists in the database
+            this.contacts.push(this.newContact);
+            if (!this.messages[this.newContact]) {
+              this.messages[this.newContact] = [];  // Initialize message array
+            }
+            this.selectedContact = this.newContact;  // Automatically select the new contact
+            this.newContact = '';  // Clear the input field
+          } else {
+            // User does not exist in the database
+            alert("This user does not exist.");
           }
-          this.selectedContact = this.newContact; // Automatically select the contact
-          this.newContact = ''; // Clear input field
-        } else {
-          alert("This user does not exist.");
+        } catch (error) {
+          console.error("Error checking user:", error);
+          alert("An error occurred while checking the user.");
         }
       }
     },
@@ -97,16 +103,14 @@ export default {
     },
     sendMessage() {
       if (this.messageInput.trim() !== "") {
-        // Push the message to the messages object for the selected contact
         if (!this.messages[this.selectedContact]) {
           this.messages[this.selectedContact] = [];
         }
+        // Add message to the message list
         this.messages[this.selectedContact].push(`You: ${this.messageInput}`);
+        this.messageInput = "";  // Clear input field
 
-        // Clear the input field
-        this.messageInput = "";
-
-        // Scroll to the bottom after sending the message
+        // Scroll to the bottom of the chat window
         this.scrollChatToBottom();
       }
     },
@@ -115,23 +119,52 @@ export default {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     },
     startHold(contact) {
-      // Start tracking hold time for deleting the contact
+      // Start tracking the hold time for deleting the contact
       this.holdTimeout = setTimeout(() => {
         if (confirm(`Do you want to delete the contact "${contact}"?`)) {
           this.deleteContact(contact);
         }
-      }, 1000); // 1 second hold for triggering delete
+      }, 1000); // Hold for 1 second to trigger deletion
     },
     endHold() {
-      // Clear the timeout if the user releases the mouse before 1 second
+      // Cancel the delete if the hold is less than 1 second
       clearTimeout(this.holdTimeout);
     },
     deleteContact(contact) {
-      this.contacts = this.contacts.filter(c => c !== contact);
+      this.contacts = this.contacts.filter(c => c !== contact);  // Remove contact from list
       if (this.selectedContact === contact) {
-        this.selectedContact = null; // Clear the selected contact if it's deleted
+        this.selectedContact = null;  // Clear the selected contact if it's deleted
       }
-      delete this.messages[contact]; // Remove the messages for the deleted contact
+      delete this.messages[contact];  // Remove messages related to the contact
+    }
+  },
+  mounted() {
+    // Fetch and store existing contacts and messages from the backend (or local storage) when the page is loaded
+    this.loadContacts();
+  },
+  methods: {
+    loadContacts() {
+      // Fetch contacts from backend or local storage to persist contacts after login/logout
+      const storedContacts = localStorage.getItem("contacts");
+      if (storedContacts) {
+        this.contacts = JSON.parse(storedContacts);
+      }
+    },
+    saveContacts() {
+      // Save contacts to local storage so they persist after login/logout
+      localStorage.setItem("contacts", JSON.stringify(this.contacts));
+    },
+    addContact() {
+      if (this.newContact) {
+        // Add the contact and save to local storage
+        this.contacts.push(this.newContact);
+        this.saveContacts();
+        this.newContact = '';
+      }
+    },
+    deleteContact(contact) {
+      this.contacts = this.contacts.filter(c => c !== contact);
+      this.saveContacts();
     }
   }
 };
