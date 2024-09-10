@@ -1,16 +1,18 @@
 <template>
-  <div class="centered-container">
-    <div class="chat-window">
-      <div class="chat-container" id="chatContainer">
-        <!-- Chat container Display für chat  -->
-        <div v-for="(message, index) in messages" :key="index" class="message">
-          {{ message }}
+  <div class="outer-container">
+    <div class="centered-container">
+      <div class="chat-window">
+        <div class="chat-container" id="chatContainer">
+          <!-- Chat container Display für chat  -->
+          <div v-for="(message, index) in messages" :key="index" class="message">
+            {{ message }}
+          </div>
         </div>
       </div>
-    </div>
-    <div class="input-container">
-      <input type="text" v-model="messageInput" placeholder="Type something to send" @keyup.enter="sendMessage" />
-      <button @click="sendMessage">Send</button>
+      <div class="input-container">
+        <input type="text" v-model="messageInput" placeholder="Type something to send" @keyup.enter="sendMessage" />
+        <button @click="sendMessage">Send</button>
+      </div>
     </div>
   </div>
 </template>
@@ -66,32 +68,32 @@ export default {
 </script>
 
 <style scoped>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  height: 100vh;
+/* Die äußere Container, der sicherstellt, dass alles in der Mitte steht */
+.outer-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f0f0f0;
+  height: 100vh; /* Volle Höhe des Viewports */
+  background-color: #f0f0f0; /* Hintergrundfarbe der gesamten Seite */
 }
 
 .centered-container {
-  width: 350px;
-  height: 700px;
+  width: 100%;
+  max-width: 400px;
+  height: 100%;
+  max-height: 700px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   background-color: white;
-  border-radius: 30px; /* Rounded corners like an iPhone */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Adding a soft shadow */
-  position: relative;
+  border-radius: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .chat-window {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   background-color: lightblue;
   border-top-left-radius: 30px;
   border-top-right-radius: 30px;
@@ -103,12 +105,13 @@ body {
   padding: 15px;
   overflow-y: auto;
   background-color: lightblue;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
 }
 
 .input-container {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #ddd;
   background-color: lightgrey;
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
@@ -119,6 +122,7 @@ input[type="text"] {
   padding: 10px;
   border-radius: 20px;
   border: 1px solid #ddd;
+  outline: none;
 }
 
 button {
@@ -129,5 +133,18 @@ button {
   border: none;
   border-radius: 20px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: darkolivegreen;
+}
+
+.message {
+  padding: 5px;
+  margin-bottom: 5px;
+  background-color: #e0e0e0;
+  border-radius: 8px;
+  word-wrap: break-word;
 }
 </style>

@@ -8,7 +8,7 @@ import MainChat from '../components/MainChat.vue';
 const routes = [
     // other routes
     {
-        path: '/mainchat',
+        path: '/main',
         name: 'MainChat',
         component: MainChat
     },
