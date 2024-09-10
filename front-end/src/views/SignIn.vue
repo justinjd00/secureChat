@@ -3,8 +3,8 @@
     <div class="signin-box">
       <h1>Anmeldung</h1>
       <form @submit.prevent="submitForm">
-        <label for="email">Benutzername:</label>
-        <input v-model="email" type="email" id="email" name="email" placeholder="Enter your Username" required />
+        <label for="username">Benutzername:</label>
+        <input v-model="username" type="text" id="username" name="username" placeholder="Enter your Username" required />
 
         <label for="password">Passwort:</label>
         <input v-model="password" type="password" id="password" name="password" placeholder="Enter your Password" required />
@@ -16,6 +16,10 @@
 
         <button type="submit" class="signin-button">Anmeldung</button>
       </form>
+
+      <div v-if="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
 
       <div class="extra-options">
         <a href="#" class="forgot-password">Passwort vergessen?</a>
@@ -32,18 +36,36 @@ export default {
   name: "SignIn",
   data() {
     return {
-      email: '',
+      username: '',
       password: '',
+      errorMessage: ''
     };
   },
   methods: {
-    submitForm() {
-      // Dummy authentication logic (replace this with real auth logic)
-      if (this.email === 'test@example.com' && this.password === 'password') {
-        // If credentials are correct, navigate to Main Chat
-        this.$router.push('/mainchat');  // Adjust the path based on your route setup
-      } else {
-        alert('Ungültige Anmeldeinformationen'); // Invalid credentials alert
+    async submitForm() {
+      try {
+        const response = await fetch("/api/signin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: this.username,
+            password: this.password
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Speichere das Token und leite den Benutzer weiter
+          localStorage.setItem("token", data.token);
+          this.$router.push("/mainchat");  // Leitet den Benutzer zum Hauptchat weiter
+        } else {
+          const errorData = await response.json();
+          this.errorMessage = errorData.detail || "Anmeldung fehlgeschlagen";
+        }
+      } catch (error) {
+        this.errorMessage = "Es gab ein Problem bei der Anmeldung.";
       }
     }
   }
@@ -83,7 +105,7 @@ label {
   color: #333;
 }
 
-input[type="email"],
+input[type="text"],
 input[type="password"] {
   width: 100%;
   padding: 0.75rem;
@@ -140,8 +162,9 @@ input[type="password"] {
   text-decoration: underline;
 }
 
-.forgot-password {
-  margin-bottom: 1rem;
-  display: inline-block;
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 1rem;
 }
 </style>
