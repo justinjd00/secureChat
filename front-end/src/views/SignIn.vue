@@ -59,7 +59,7 @@ export default {
           const data = await response.json();
           // Speichere das Token und leite den Benutzer weiter
           localStorage.setItem("token", data.token);
-          this.$router.push("/mainchat");  // Leitet den Benutzer zum Hauptchat weiter
+          this.$router.push("/main");  // Leitet den Benutzer zum Hauptchat weiter
         } else {
           const errorData = await response.json();
           this.errorMessage = errorData.detail || "Anmeldung fehlgeschlagen";
