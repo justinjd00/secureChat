@@ -17,7 +17,7 @@
           @mouseup="endHold"
           @mouseleave="endHold"
         >
-          {{ contact }}
+          {{ contact.username }} <!-- Ensure that contact is displayed by username -->
         </li>
       </ul>
     </div>
@@ -28,7 +28,7 @@
         <div class="chat-container" id="chatContainer">
           <div v-if="!selectedContact" class="no-chat">No chat selected</div>
           <div v-if="selectedContact" class="chat-header">
-            Chat with {{ selectedContact }}
+            Chat with {{ selectedContact.username }} <!-- Ensure we access selectedContact only when it's defined -->
           </div>
 
           <!-- Messages sent to the selected contact -->
@@ -56,118 +56,73 @@
 export default {
   data() {
     return {
-      newContact: '', // Input for adding a new contact
-      contacts: [], // List of contacts
-      selectedContact: null, // Currently selected contact
-      messageInput: '', // Input field for the message
-      messages: {}, // Store messages for each contact
-      holdTimeout: null // Used for long press to delete contact
+      newContact: '',       // Input for adding a new contact
+      contacts: [],         // List of contacts (fetched from DB)
+      selectedContact: null, // Currently selected contact (start as null)
+      messageInput: '',     // Input field for the message
+      messages: {},         // Store messages for each contact (optional)
+      holdTimeout: null     // Used for long press to delete contact
     };
   },
   computed: {
     sortedContacts() {
       // Sort contacts alphabetically
-      return [...this.contacts].sort((a, b) => a.localeCompare(b));
+      return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username)); // Ensure contacts are objects
     },
     currentMessages() {
       // Return messages for the currently selected contact
-      return this.messages[this.selectedContact] || [];
+      return this.selectedContact ? this.messages[this.selectedContact.username] || [] : [];
     }
   },
   methods: {
     async addContact() {
-      if (this.newContact) {
-        try {
-          // Send a request to the backend to check if the contact exists
-          const response = await fetch(`/api/check_user/${this.newContact}`);
-          if (response.ok) {
-            // Contact exists in the database
-            this.contacts.push(this.newContact);
-            if (!this.messages[this.newContact]) {
-              this.messages[this.newContact] = []; // Initialize message array
-            }
-            this.selectedContact = this.newContact; // Automatically select the new contact
-            this.newContact = ''; // Clear the input field
-            this.saveContacts(); // Save contacts to localStorage
-          } else {
-            // User does not exist in the database
-            alert("This user does not exist.");
-          }
-        } catch (error) {
-          console.error("Error checking user:", error);
-          alert("An error occurred while checking the user.");
+      const user_id = this.getLoggedInUserId();
+      const contact_username = this.newContact;
+
+      if (contact_username) {
+        const response = await fetch('/api/add_contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ user_id, contact_username }),
+        });
+
+        if (response.ok) {
+          // Successfully added contact to the database
+          this.contacts.push({ username: contact_username });
+          this.newContact = '';  // Clear the input field
+        } else {
+          const errorData = await response.json();
+          alert("Failed to add contact: " + errorData.detail);
         }
       }
     },
     selectContact(contact) {
-      this.selectedContact = contact;
+      this.selectedContact = contact; // Make sure selectedContact is the entire contact object
     },
-    sendMessage() {
-      if (this.messageInput.trim() !== "") {
-        if (!this.messages[this.selectedContact]) {
-          this.messages[this.selectedContact] = [];
+    async fetchContacts() {
+      const user_id = this.getLoggedInUserId();
+      try {
+        const response = await fetch(`/api/get_contacts/${user_id}`);
+        if (response.ok) {
+          const data = await response.json();
+          this.contacts = data;
+        } else {
+          alert("Failed to fetch contacts.");
         }
-        // Add message to the message list
-        this.messages[this.selectedContact].push(`You: ${this.messageInput}`);
-        this.messageInput = ""; // Clear input field
-        this.saveMessages(); // Save messages to localStorage
-
-        // Scroll to the bottom of the chat window
-        this.scrollChatToBottom();
+      } catch (error) {
+        console.error("Error fetching contacts:", error);
       }
     },
-    scrollChatToBottom() {
-      const chatContainer = this.$el.querySelector('#chatContainer');
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    },
-    startHold(contact) {
-      // Start tracking the hold time for deleting the contact
-      this.holdTimeout = setTimeout(() => {
-        if (confirm(`Do you want to delete the contact "${contact}"?`)) {
-          this.deleteContact(contact);
-        }
-      }, 1000); // Hold for 1 second to trigger deletion
-    },
-    endHold() {
-      // Cancel the delete if the hold is less than 1 second
-      clearTimeout(this.holdTimeout);
-    },
-    deleteContact(contact) {
-      this.contacts = this.contacts.filter(c => c !== contact); // Remove contact from list
-      if (this.selectedContact === contact) {
-        this.selectedContact = null; // Clear the selected contact if it's deleted
-      }
-      delete this.messages[contact]; // Remove messages related to the contact
-      this.saveContacts(); // Save contacts to localStorage
-      this.saveMessages(); // Save messages to localStorage
-    },
-    saveContacts() {
-      // Save contacts to localStorage
-      localStorage.setItem('contacts', JSON.stringify(this.contacts));
-    },
-    saveMessages() {
-      // Save messages to localStorage
-      localStorage.setItem('messages', JSON.stringify(this.messages));
-    },
-    loadContacts() {
-      // Load contacts from localStorage if they exist
-      const storedContacts = localStorage.getItem('contacts');
-      if (storedContacts) {
-        this.contacts = JSON.parse(storedContacts);
-      }
-    },
-    loadMessages() {
-      // Load messages from localStorage if they exist
-      const storedMessages = localStorage.getItem('messages');
-      if (storedMessages) {
-        this.messages = JSON.parse(storedMessages);
-      }
+    getLoggedInUserId() {
+      // Retrieve logged-in user's ID (stored in localStorage, token, etc.)
+      return localStorage.getItem('user_id'); // Adjust this to your actual login mechanism
     }
   },
   mounted() {
-    // Load contacts and messages from localStorage on page load
-    this.loadContacts();
-    this.loadMessages();
+    // Fetch contacts from the database when the component is mounted
+    this.fetchContacts();
   }
 };
 </script>

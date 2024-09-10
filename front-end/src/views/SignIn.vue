@@ -58,6 +58,7 @@ export default {
         if (response.ok) {
           const data = await response.json();
           // Speichere das Token und leite den Benutzer weiter
+          localStorage.setItem('user_id', data.user_id)
           localStorage.setItem("token", data.token);
           this.$router.push("/main");  // Leitet den Benutzer zum Hauptchat weiter
         } else {

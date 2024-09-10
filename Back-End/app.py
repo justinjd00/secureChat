@@ -3,8 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from strawberry.fastapi import GraphQLRouter
 from schema import schema
-from auth.authentication import register_user, pwd_context, verify_password, \
-    login_user  # Make sure these imports are correct
+from auth.authentication import register_user, pwd_context, verify_password, login_user
 import sys
 import os
 from sqlalchemy.orm import Session
@@ -17,10 +16,10 @@ app = FastAPI()
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Set up CORS to allow frontend requests if they're on a different port (e.g., Vite on port 3000)
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend address
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,39 +39,39 @@ class UserLogin(BaseModel):
     password: str
 
 
-# Passwort-Hashing-Funktion
+# Password hashing function
 def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-# Signup-Route
+# Signup Route
 @app.post("/signup")
 def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
-    # Überprüfe, ob der Benutzer bereits existiert
+    # Check if the user already exists
     user_in_db = db.query(User).filter(User.email == user_data.email).first()
     if user_in_db:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Passwort hashen
+    # Hash the password
     hashed_password = hash_password(user_data.password)
 
-    # IP-Adresse und User-Agent aus der Anfrage holen
+    # Get IP and User-Agent info from the request
     ip_address = request.client.host
     user_agent = request.headers.get("User-Agent")
     os = request.headers.get("sec-ch-ua-platform")
 
-    # Erstelle den neuen Benutzer
+    # Create a new user entry
     new_user = User(
         username=user_data.username,
         email=user_data.email,
-        password=hashed_password,  # Gehashte Passwort speichern
+        password=hashed_password,
         ip_address=ip_address,
         user_agent=user_agent,
         os=os,
         registration_date=datetime.utcnow()
     )
 
-    # Füge den Benutzer zur Datenbank hinzu
+    # Add user to the database
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -80,57 +79,67 @@ def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db
     return {"message": "User created successfully", "user_id": new_user.id}
 
 
-# Login-Route
+# Login Route
 @app.post("/signin")
 def signin(user_data: UserLogin, db: Session = Depends(get_db)):
-    # Benutzer in der Datenbank finden
+    # Find the user in the database
     user_in_db = db.query(User).filter(User.username == user_data.username).first()
 
     if not user_in_db or not verify_password(user_data.password, user_in_db.password):
-        raise HTTPException(status_code=400, detail="Falsche Anmeldedaten")
+        raise HTTPException(status_code=400, detail="Invalid login credentials")
 
-    return {"message": "Login erfolgreich", "user_id": user_in_db.id}
+    return {"message": "Login successful", "user_id": user_in_db.id}
 
 
+# Check if a user exists by username
 @app.get("/check_user/{username}")
 def check_user(username: str, db: Session = Depends(get_db)):
-    # Query the database for a user with the given username
     user = db.query(User).filter(User.username == username).first()
-
     if user:
         return {"message": f"User {username} exists."}
     else:
         raise HTTPException(status_code=404, detail=f"User {username} not found.")
 
 
-graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
+# Pydantic model for adding a contact
+class AddContactRequest(BaseModel):
+    user_id: uuid.UUID
+    contact_username: str
 
 
+# Add contact route - Ensure proper validation for user_id and contact_username
 @app.post("/add_contact")
-def add_contact(user_id: uuid.UUID, contact_username: str, db: Session = Depends(get_db)):
+def add_contact(request_data: AddContactRequest, db: Session = Depends(get_db)):
+    # Check if user_id and contact_username are valid
+    if not request_data.user_id or not request_data.contact_username:
+        raise HTTPException(status_code=422, detail="User ID and contact username are required")
+
     # Find the contact in the Users table
-    contact = db.query(User).filter(User.username == contact_username).first()
+    contact = db.query(User).filter(User.username == request_data.contact_username).first()
 
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
     # Check if contact already exists for this user
-    existing_contact = db.query(Contact).filter_by(user_id=user_id, contact_id=contact.id).first()
+    existing_contact = db.query(Contact).filter_by(user_id=request_data.user_id, contact_id=contact.id).first()
     if existing_contact:
         raise HTTPException(status_code=400, detail="Contact already added")
 
     # Add the new contact
-    new_contact = Contact(user_id=user_id, contact_id=contact.id)
+    new_contact = Contact(user_id=request_data.user_id, contact_id=contact.id, created_at=datetime.utcnow())
     db.add(new_contact)
     db.commit()
 
-    return {"message": f"Contact {contact_username} added successfully"}
+    return {"message": f"Contact {request_data.contact_username} added successfully"}
 
 
+# Get contacts route - Ensure user_id is valid
 @app.get("/get_contacts/{user_id}")
 def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
-    # Holen Sie alle Kontakte für den Benutzer aus der Datenbank
+    if not user_id:
+        raise HTTPException(status_code=422, detail="User ID is required")
+
+    # Fetch contacts for the given user_id
     contacts = db.query(Contact).filter_by(user_id=user_id).all()
 
     if not contacts:
@@ -142,7 +151,14 @@ def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
         contact_list.append({"username": contact_user.username})
 
     return contact_list
+
+
+# GraphQL route
+graphql_app = GraphQLRouter(schema)
+app.include_router(graphql_app, prefix="/graphql")
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8083)
+    uvicorn.run(app, host="127.0.0.1", port=8088)
