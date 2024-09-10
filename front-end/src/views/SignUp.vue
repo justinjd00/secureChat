@@ -26,9 +26,11 @@
         <button type="submit" class="signup-button">Registrieren</button>
       </form>
 
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
       <div class="extra-options">
         <p>
-          Bereits ein Konto? <router-link to="/" class="signin-link">Hier einloggennnn</router-link>
+          Bereits ein Konto? <router-link to="/" class="signin-link">Hier einloggen</router-link>
         </p>
       </div>
     </div>
@@ -45,13 +47,14 @@ export default {
         password: '',
       },
       confirmPassword: '',
+      errorMessage: '', // Für Fehlermeldungen
     };
   },
   methods: {
     async submitForm() {
       // Check if password and confirmPassword match
       if (this.user.password !== this.confirmPassword) {
-        alert("Passwörter stimmen nicht überein!");
+        this.errorMessage = "Passwörter stimmen nicht überein!";
         return;
       }
 
@@ -64,9 +67,11 @@ export default {
       });
 
       if (response.ok) {
-        console.log("User registered successfully");
+        // Weiterleiten zur Login-Seite nach erfolgreicher Registrierung
+        this.$router.push("/mainchat");
       } else {
-        console.error("Error registering user");
+        // Fehlermeldung anzeigen, wenn Registrierung fehlschlägt
+        this.errorMessage = "Registrierung fehlgeschlagen. Versuchen Sie es erneut.";
       }
     },
   },
@@ -149,5 +154,11 @@ input[type="password"] {
 
 .signin-link:hover {
   text-decoration: underline;
+}
+
+.error-message {
+  color: red;
+  text-align: center;
+  margin-top: 1rem;
 }
 </style>
