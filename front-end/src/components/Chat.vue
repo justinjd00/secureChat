@@ -1,21 +1,9 @@
 <template>
   <div class="outer-container">
-    <div class="left-sidebar">
-      <h3>Contacts</h3>
-      <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact">
-      <button @click="addContact">Add Contact</button>
-
-      <ul>
-        <li v-for="(contact, index) in contacts" :key="index" @click="selectContact(contact)">
-          {{ contact }}
-        </li>
-      </ul>
-    </div>
-
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
-          <!-- Chat container Display for chat -->
+          <!-- Chat container Display für chat  -->
           <div v-for="(message, index) in messages" :key="index" class="message">
             {{ message }}
           </div>
@@ -38,9 +26,6 @@ export default {
       socket: null,
       messageInput: '',
       messages: [],
-      newContact: '',
-      contacts: [], // Initially empty contact list
-      selectedContact: null // Selected contact for chat
     };
   },
   mounted() {
@@ -57,23 +42,15 @@ export default {
     });
   },
   methods: {
-    addContact() {
-      if (this.newContact) {
-        this.contacts.push(this.newContact);
-        this.newContact = ''; // Clear input field
-      }
-    },
-    selectContact(contact) {
-      this.selectedContact = contact;
-      // You can later add code to load chat history based on contact
-    },
     sendMessage() {
-      if (this.messageInput.trim() && this.selectedContact) {
+      const messageText = this.messageInput.trim();
+
+      if (messageText !== "") {
         // Emit message via socket
-        this.socket.send(`To ${this.selectedContact}: ${this.messageInput}`);
+        this.socket.send(`You: ${messageText}`);
 
         // Add the message to the messages array
-        this.messages.push(`You to ${this.selectedContact}: ${this.messageInput}`);
+        this.messages.push(`You: ${messageText}`);
 
         // Clear the input field
         this.messageInput = "";
@@ -91,68 +68,15 @@ export default {
 </script>
 
 <style scoped>
-/* Overall container with flexbox for chat and contacts */
+/* Die äußere Container, der sicherstellt, dass alles in der Mitte steht */
 .outer-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #f0f0f0;
+  height: 100vh; /* Volle Höhe des Viewports */
+  background-color: #f0f0f0; /* Hintergrundfarbe der gesamten Seite */
 }
 
-/* Left sidebar for contact list */
-.left-sidebar {
-  width: 200px;
-  height: 100%;
-  background-color: #fff;
-  border-right: 1px solid #ddd;
-  padding: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.left-sidebar h3 {
-  text-align: center;
-}
-
-.left-sidebar input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  outline: none;
-}
-
-.left-sidebar button {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  background-color: olive;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.left-sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.left-sidebar li {
-  padding: 10px;
-  background-color: #f0f0f0;
-  margin-bottom: 10px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
-}
-
-.left-sidebar li:hover {
-  background-color: #ddd;
-}
-
-/* Chat window styling */
 .centered-container {
   width: 100%;
   max-width: 400px;
