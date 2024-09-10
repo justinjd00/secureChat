@@ -19,20 +19,20 @@ https://cryptopals.com/
 3. BE
 
 Service URI
----------postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/defaultdb?sslmode=require
+---------postgres://avnadmin:AVNS_wwY6Tw8KwsNrL5cWf5Z@pg-3ec1ff15-justinjd00-e424.e.aivencloud.com:16693/defaultdb?sslmode=require<br>
 Database name
----------SecureChat
+---------SecureChat<br>
 
 Tables:
----------"Users" ("" nicht vergessen)
+---------"Users" ("" nicht vergessen)<br>
 Host
----------pg-3ec1ff15-justinjd00-e424.e.aivencloud.com
+---------pg-3ec1ff15-justinjd00-e424.e.aivencloud.com<br>
 Port
----------16693
+---------16693<br>
 User
----------avnadmin
+---------avnadmin<br>
 Password
----------AVNS_wwY6Tw8KwsNrL5cWf5Z
+---------AVNS_wwY6Tw8KwsNrL5cWf5Z<br>
 
 3.1 Database Control mit PSQL
 
