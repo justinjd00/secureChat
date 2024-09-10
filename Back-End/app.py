@@ -1,10 +1,10 @@
-
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from strawberry.fastapi import GraphQLRouter
 from schema import schema
-from auth.authentication import register_user, pwd_context  # Make sure this imports correctly
+from auth.authentication import register_user, pwd_context, verify_password, \
+    login_user  # Make sure these imports are correct
 import sys
 import os
 from sqlalchemy.orm import Session
@@ -13,8 +13,6 @@ from models import User
 from datetime import datetime
 
 app = FastAPI()
-
-
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,16 +25,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Pydantic model for validating signup requests
 class UserCreate(BaseModel):
     username: str
     email: str
     password: str
 
+
+# Pydantic model for validating login requests
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
 # Passwort-Hashing-Funktion
 def hash_password(password: str):
     return pwd_context.hash(password)
 
+
+# Signup-Route
 @app.post("/signup")
 def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
     # Überprüfe, ob der Benutzer bereits existiert
@@ -70,11 +78,23 @@ def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db
 
     return {"message": "User created successfully", "user_id": new_user.id}
 
+
+# Login-Route
+@app.post("/signin")
+def signin(user_data: UserLogin, db: Session = Depends(get_db)):
+    # Benutzer in der Datenbank finden
+    user_in_db = db.query(User).filter(User.username == user_data.username).first()
+
+    if not user_in_db or not verify_password(user_data.password, user_in_db.password):
+        raise HTTPException(status_code=400, detail="Falsche Anmeldedaten")
+
+    return {"message": "Login erfolgreich", "user_id": user_in_db.id}
+
+
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8077)
 
-
+    uvicorn.run(app, host="127.0.0.1", port=8078)
