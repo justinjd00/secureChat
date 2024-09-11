@@ -212,6 +212,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 /* Overall container with flexbox for chat and contacts */
 .outer-container {

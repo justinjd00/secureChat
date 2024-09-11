@@ -202,4 +202,4 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8092)
+    uvicorn.run(app, host="127.0.0.1", port=8095)
