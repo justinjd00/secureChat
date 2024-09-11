@@ -17,18 +17,18 @@
           @mouseup="endHold"
           @mouseleave="endHold"
         >
-          {{ contact.username }} <!-- Ensure that contact is displayed by username -->
+          {{ contact.username }} <!-- Display contacts by username -->
         </li>
       </ul>
     </div>
 
-    <!-- Chat window showing open chats (with message input allowed) -->
+    <!-- Chat window showing open chats -->
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
           <div v-if="!selectedContact" class="no-chat">No chat selected</div>
           <div v-if="selectedContact" class="chat-header">
-            Chat with {{ selectedContact.username }} <!-- Ensure we access selectedContact only when it's defined -->
+            Chat with {{ selectedContact.username }} <!-- Display chat with selected contact -->
           </div>
 
           <!-- Messages sent to the selected contact -->
@@ -56,18 +56,18 @@
 export default {
   data() {
     return {
-      newContact: '',       // Input for adding a new contact
-      contacts: [],         // List of contacts (fetched from DB)
-      selectedContact: null, // Currently selected contact (start as null)
-      messageInput: '',     // Input field for the message
-      messages: {},         // Store messages for each contact (optional)
-      holdTimeout: null     // Used for long press to delete contact
+      newContact: '',        // Input for adding a new contact
+      contacts: [],          // List of contacts fetched from DB
+      selectedContact: null,  // Currently selected contact (start as null)
+      messageInput: '',      // Input field for the message
+      messages: {},          // Store messages for each contact (optional)
+      holdTimeout: null      // Used for long press to delete contact
     };
   },
   computed: {
     sortedContacts() {
-      // Sort contacts alphabetically
-      return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username)); // Ensure contacts are objects
+      // Sort contacts alphabetically by username
+      return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username));
     },
     currentMessages() {
       // Return messages for the currently selected contact
@@ -103,11 +103,17 @@ export default {
     },
     async fetchContacts() {
       const user_id = this.getLoggedInUserId();
+      if (!user_id) {
+        alert("No user ID found. Please log in again.");
+        this.$router.push('/login');  // Redirect to login if no user_id
+        return;
+      }
+
       try {
         const response = await fetch(`/api/get_contacts/${user_id}`);
         if (response.ok) {
           const data = await response.json();
-          this.contacts = data;
+          this.contacts = data.message === "No contacts found" ? [] : data;  // Set contacts or empty array
         } else {
           alert("Failed to fetch contacts.");
         }
@@ -116,8 +122,13 @@ export default {
       }
     },
     getLoggedInUserId() {
-      // Retrieve logged-in user's ID (stored in localStorage, token, etc.)
-      return localStorage.getItem('user_id'); // Adjust this to your actual login mechanism
+      // Retrieve logged-in user's ID (stored in localStorage)
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        alert("User not logged in");
+        this.$router.push('/login');  // Redirect to login if no user_id is found
+      }
+      return userId;
     }
   },
   mounted() {
@@ -158,7 +169,7 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   outline: none;
-  color: black; /* Input text color */
+  color: black;
 }
 
 .left-sidebar button {
@@ -184,7 +195,7 @@ export default {
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.3s ease, padding-left 0.3s ease;
-  color: black; /* Contact text color */
+  color: black;
 }
 
 .left-sidebar li:hover {
@@ -192,8 +203,8 @@ export default {
 }
 
 .left-sidebar li.selected {
-  background-color: darkgray; /* Darker background for selected contact */
-  padding-left: 10px; /* Move selected contact slightly to the right */
+  background-color: darkgray;
+  padding-left: 10px;
 }
 
 /* Chat window styling */
@@ -255,7 +266,7 @@ input[type="text"] {
   border-radius: 20px;
   border: 1px solid #ddd;
   outline: none;
-  color: black; /* Input text color */
+  color: black;
 }
 
 button {
