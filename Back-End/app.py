@@ -130,22 +130,23 @@ def add_contact(request_data: AddContactRequest, db: Session = Depends(get_db)):
 
     return {"message": "Contact added successfully"}
 
-
-# Get contacts route
 @app.get("/get_contacts/{user_id}")
 def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
-    if not user_id:
-        raise HTTPException(status_code=422, detail="User ID is required")
-
-    # Fetch contacts
+    # Fetch contacts for the given user_id
     contacts = db.query(Contact).filter_by(user_id=user_id).all()
 
     if not contacts:
         return {"message": "No contacts found"}
 
-    contact_list = [{"username": db.query(User).filter_by(id=contact.contact_id).first().username} for contact in contacts]
-    return contact_list
+    contact_list = []
+    for contact in contacts:
+        contact_user = db.query(User).filter_by(id=contact.contact_id).first()
+        contact_list.append({
+            "username": contact_user.username,
+            "id": contact_user.id  # Ensure you're sending the contact's ID
+        })
 
+    return contact_list
 
 # Pydantic model for sending a message
 class SendMessageRequest(BaseModel):
@@ -154,25 +155,28 @@ class SendMessageRequest(BaseModel):
     content: str
 
 
-# Route to send message
 @app.post("/send_message")
 def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)):
-    # Verify sender and receiver exist
-    sender = db.query(User).filter(User.id == request_data.sender_id).first()
-    receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
+    try:
+        # Verify sender and receiver exist
+        sender = db.query(User).filter(User.id == request_data.sender_id).first()
+        receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
 
-    if not sender or not receiver:
-        raise HTTPException(status_code=404, detail="Sender or receiver not found")
+        if not sender or not receiver:
+            raise HTTPException(status_code=404, detail="Sender or receiver not found")
 
-    # Save message to database
-    new_message = Message(
-        sender_id=request_data.sender_id,
-        receiver_id=request_data.receiver_id,
-        content=request_data.content,
-        timestamp=datetime.utcnow()
-    )
-    db.add(new_message)
-    db.commit()
+        # Save message to database
+        new_message = Message(
+            sender_id=request_data.sender_id,
+            receiver_id=request_data.receiver_id,
+            content=request_data.content,
+            timestamp=datetime.utcnow()
+        )
+        db.add(new_message)
+        db.commit()
+
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
     return {"message": "Message sent successfully"}
 
@@ -198,4 +202,4 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8091)
+    uvicorn.run(app, host="127.0.0.1", port=8092)
