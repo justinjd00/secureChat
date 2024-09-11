@@ -8,7 +8,7 @@ import sys
 import os
 from sqlalchemy.orm import Session
 from datetime import datetime
-from models import User, Contact
+from models import User, Contact, Message
 from config import get_db
 import uuid
 
@@ -156,6 +156,54 @@ def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
 # GraphQL route
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
+
+
+# Pydantic model for sending a message
+class SendMessageRequest(BaseModel):
+    sender_id: uuid.UUID
+    receiver_id: uuid.UUID
+    content: str
+
+# Route to send a message
+@app.post("/send_message")
+def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)):
+    # Ensure both sender and receiver exist
+    sender = db.query(User).filter(User.id == request_data.sender_id).first()
+    receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
+
+    if not sender or not receiver:
+        raise HTTPException(status_code=404, detail="Sender or receiver not found")
+
+    # Save the message to the database
+    new_message = Message(
+        sender_id=request_data.sender_id,
+        receiver_id=request_data.receiver_id,
+        content=request_data.content,
+        timestamp=datetime.utcnow()
+    )
+    db.add(new_message)
+    db.commit()
+
+    return {"message": "Message sent successfully"}
+
+
+@app.get("/get_messages/{user_id}/{contact_id}")
+def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depends(get_db)):
+    # Fetch all messages between the user and the contact
+    messages = db.query(Message).filter(
+        (Message.sender_id == user_id) & (Message.receiver_id == contact_id) |
+        (Message.sender_id == contact_id) & (Message.receiver_id == user_id)
+    ).order_by(Message.timestamp).all()
+
+    if not messages:
+        return {"messages": []}  # Return an empty array if no messages are found
+
+    # Format the messages for the frontend
+    formatted_messages = [
+        {"sender": message.sender.username, "content": message.content, "timestamp": message.timestamp} for message in
+        messages]
+
+    return {"messages": formatted_messages}
 
 
 if __name__ == "__main__":
