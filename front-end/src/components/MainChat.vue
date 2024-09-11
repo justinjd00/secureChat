@@ -52,17 +52,23 @@ export default {
   computed: {
     sortedContacts() {
       // Sort contacts alphabetically by username
+      console.log("Sorting contacts:", this.contacts); // Log the contacts before sorting
       return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username));
     },
     currentMessages() {
       // Return messages for the currently selected contact
-      return this.selectedContact ? this.messages[this.selectedContact.username] || [] : [];
+      if (this.selectedContact) {
+        console.log("Displaying messages for contact:", this.selectedContact.username, this.messages[this.selectedContact.username]);
+        return this.messages[this.selectedContact.username] || [];
+      }
+      return [];
     }
   },
   methods: {
     async addContact() {
       const user_id = this.getLoggedInUserId();
       const contact_username = this.newContact;
+      console.log("Adding new contact with username:", contact_username); // Log the contact username
 
       if (contact_username) {
         const response = await fetch('/api/add_contact', {
@@ -74,17 +80,23 @@ export default {
         });
 
         if (response.ok) {
-          // Fetch contacts again after adding new one
-          this.fetchContacts();
+          console.log("Contact added successfully, fetching updated contacts");
+          this.fetchContacts();  // Fetch contacts again after adding new one
           this.newContact = '';  // Clear the input field
         } else {
           const errorData = await response.json();
+          console.error("Failed to add contact:", errorData.detail);
           alert("Failed to add contact: " + errorData.detail);
         }
+      } else {
+        console.error("Contact username is empty");
       }
     },
+
     async fetchContacts() {
       const user_id = this.getLoggedInUserId();
+      console.log("Fetching contacts for user_id:", user_id);
+
       if (!user_id) {
         alert("No user ID found. Please log in again.");
         this.$router.push('/login');  // Redirect to login if no user_id
@@ -95,7 +107,12 @@ export default {
         const response = await fetch(`/api/get_contacts/${user_id}`);
         if (response.ok) {
           const data = await response.json();
-          this.contacts = data.message === "No contacts found" ? [] : data;
+          console.log("Fetched contacts:", data);  // Log contacts for debugging
+          this.contacts = data.map(contact => ({
+            username: contact.username,
+            id: contact.id || "undefined" // Log the ID, if missing show "undefined"
+          }));
+          console.log("Updated contacts list:", this.contacts);  // Log the updated contacts list
         } else {
           alert("Failed to fetch contacts.");
         }
@@ -103,8 +120,19 @@ export default {
         console.error("Error fetching contacts:", error);
       }
     },
+
     async selectContact(contact) {
+      console.log("Attempting to select contact:", contact);  // Log the selected contact
+
+      // Check if the contact has both username and id
+      if (!contact.id || !contact.username) {
+        console.error("Invalid contact selected. Contact must have a username and id:", contact);
+        alert("Invalid contact selected. Contact must have a username and id.");
+        return;
+      }
+
       this.selectedContact = contact;
+      console.log("Contact selected:", this.selectedContact); // Log the selected contact
 
       // Fetch messages for the selected contact
       const user_id = this.getLoggedInUserId();
@@ -112,18 +140,23 @@ export default {
         const response = await fetch(`/api/get_messages/${user_id}/${contact.id}`);
         if (response.ok) {
           const data = await response.json();
+          console.log("Fetched messages for contact:", this.selectedContact.username, data.messages); // Log the messages
           this.messages[this.selectedContact.username] = data.messages;
         } else {
-          alert("Failed to fetch messages.");
+          const errorData = await response.json();
+          console.error("Error fetching messages:", errorData.detail);
         }
       } catch (error) {
         console.error("Error fetching messages:", error);
       }
     },
+
     async sendMessage() {
       const sender_id = this.getLoggedInUserId();
-      const receiver_id = this.selectedContact.id;
+      const receiver_id = this.selectedContact?.id;
       const content = this.messageInput;
+
+      console.log("Sending message from:", sender_id, "to:", receiver_id, "content:", content);
 
       if (!sender_id || !receiver_id || !content.trim()) {
         alert("Message or contact is missing.");
@@ -157,10 +190,12 @@ export default {
         console.error("Error sending message:", error);
       }
     },
+
     scrollChatToBottom() {
       const chatContainer = this.$el.querySelector('#chatContainer');
       chatContainer.scrollTop = chatContainer.scrollHeight;
     },
+
     getLoggedInUserId() {
       const userId = localStorage.getItem('user_id');
       if (!userId) {
@@ -170,12 +205,12 @@ export default {
       return userId;
     }
   },
+
   mounted() {
     this.fetchContacts();
   }
 };
 </script>
-
 
 <style scoped>
 /* Overall container with flexbox for chat and contacts */
