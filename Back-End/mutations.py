@@ -54,21 +54,22 @@ class Mutation:
         return f"Benutzer mit ID {user_id} wurde erfolgreich ausgeloggt."
 
     @strawberry.mutation
-    def send_message(self, sender_username: str, receiver_username: str, content: str, info: Info) -> SendMessageResponse:
+    def send_message(self, sender_username: str, receiver_username: str, content: str,
+                     info: Info = None) -> SendMessageResponse:
         """
-        Diese Mutation sendet eine Nachricht von einem Benutzer zu einem anderen und speichert sie in der Datenbank.
+        This mutation sends a message from one user to another and saves it in the database.
         """
-        request: Request = info.context['request']
+        # Create a database session
         db = next(get_db())
-        print(db.info)
-        # Holen der Sender- und Empfänger-IDs
+
+        # Fetch the sender and receiver from the database
         sender = db.query(UserModel).filter(UserModel.username == sender_username).first()
         receiver = db.query(UserModel).filter(UserModel.username == receiver_username).first()
 
         if not sender or not receiver:
-            raise Exception("Sender oder Empfänger nicht gefunden.")
+            raise Exception("Sender or receiver not found.")
 
-        # Nachricht speichern
+        # Save the message to the database
         new_message = MessageModel(
             id=str(uuid4()),
             content=content,
@@ -79,6 +80,7 @@ class Mutation:
         db.add(new_message)
         db.commit()
 
+        # Format the response
         return SendMessageResponse(
             id=new_message.id,
             content=new_message.content,

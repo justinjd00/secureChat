@@ -9,7 +9,7 @@ import uuid
 import sys
 import os
 from auth.authentication import pwd_context, verify_password
-
+from mutations import Mutation
 app = FastAPI()
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -154,34 +154,32 @@ class SendMessageRequest(BaseModel):
     receiver_id: uuid.UUID
     content: str
 
-
 @app.post("/send_message")
-def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)):
+async def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)):
+    # Fetch sender and receiver by their IDs
+    sender = db.query(User).filter(User.id == request_data.sender_id).first()
+    receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
+
+    if not sender or not receiver:
+        raise HTTPException(status_code=404, detail="Sender or receiver not found")
+
+    # Create an instance of the Mutation class
+    mutation = Mutation()
+
+    # Call the send_message mutation from your mutations.py
     try:
-        # Verify sender and receiver exist
-        sender = db.query(User).filter(User.id == request_data.sender_id).first()
-        receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
-
-        if not sender or not receiver:
-            raise HTTPException(status_code=404, detail="Sender or receiver not found")
-
-        # Save message to database
-        new_message = Message(
-            sender_id=request_data.sender_id,
-            receiver_id=request_data.receiver_id,
+        # Replace info={'request': None} with None, since you don’t need it here
+        result = mutation.send_message(
+            sender_username=sender.username,
+            receiver_username=receiver.username,
             content=request_data.content,
-            timestamp=datetime.utcnow()
+            info=None  # Remove the problematic info passing
         )
-        db.add(new_message)
-        db.commit()
-
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
-
-    return {"message": "Message sent successfully"}
+        return {"message": "Message sent successfully", "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# Route to get messages
 @app.get("/get_messages/{user_id}/{contact_id}")
 def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depends(get_db)):
     # Fetch all messages between the user and the contact
@@ -202,4 +200,4 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8095)
+    uvicorn.run(app, host="127.0.0.1", port=8101)
