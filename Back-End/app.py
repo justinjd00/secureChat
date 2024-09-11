@@ -1,16 +1,14 @@
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from strawberry.fastapi import GraphQLRouter
-from schema import schema
-from auth.authentication import register_user, pwd_context, verify_password, login_user
-import sys
-import os
 from sqlalchemy.orm import Session
 from datetime import datetime
 from models import User, Contact, Message
 from config import get_db
 import uuid
+import sys
+import os
+from auth.authentication import pwd_context, verify_password
 
 app = FastAPI()
 
@@ -26,14 +24,14 @@ app.add_middleware(
 )
 
 
-# Pydantic model for validating signup requests
+# Pydantic model for signup
 class UserCreate(BaseModel):
     username: str
     email: str
     password: str
 
 
-# Pydantic model for validating login requests
+# Pydantic model for login
 class UserLogin(BaseModel):
     username: str
     password: str
@@ -44,21 +42,21 @@ def hash_password(password: str):
     return pwd_context.hash(password)
 
 
-# Signup Route
+# Signup route
 @app.post("/signup")
 def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db)):
-    # Check if the user already exists
+    # Check if user already exists
     user_in_db = db.query(User).filter(User.email == user_data.email).first()
     if user_in_db:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Hash the password
+    # Hash password
     hashed_password = hash_password(user_data.password)
 
-    # Get IP and User-Agent info from the request
+    # Collect IP and User-Agent info
     ip_address = request.client.host
     user_agent = request.headers.get("User-Agent")
-    os = request.headers.get("sec-ch-ua-platform")
+    os_info = request.headers.get("sec-ch-ua-platform")
 
     # Create a new user entry
     new_user = User(
@@ -67,11 +65,11 @@ def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db
         password=hashed_password,
         ip_address=ip_address,
         user_agent=user_agent,
-        os=os,
+        os=os_info,
         registration_date=datetime.utcnow()
     )
 
-    # Add user to the database
+    # Add to database
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -79,10 +77,10 @@ def signup(user_data: UserCreate, request: Request, db: Session = Depends(get_db
     return {"message": "User created successfully", "user_id": new_user.id}
 
 
-# Login Route
+# Login route
 @app.post("/signin")
 def signin(user_data: UserLogin, db: Session = Depends(get_db)):
-    # Find the user in the database
+    # Find user by username
     user_in_db = db.query(User).filter(User.username == user_data.username).first()
 
     if not user_in_db or not verify_password(user_data.password, user_in_db.password):
@@ -91,36 +89,36 @@ def signin(user_data: UserLogin, db: Session = Depends(get_db)):
     return {"message": "Login successful", "user_id": user_in_db.id}
 
 
-# Check if a user exists by username
+# Check if user exists
 @app.get("/check_user/{username}")
 def check_user(username: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == username).first()
     if user:
         return {"message": f"User {username} exists."}
     else:
-        raise HTTPException(status_code=404, detail=f"User {username} not found.")
+        raise HTTPException(status_code=404, detail="User not found")
 
 
-# Pydantic model for adding a contact
+# Model for adding a contact
 class AddContactRequest(BaseModel):
     user_id: uuid.UUID
     contact_username: str
 
 
-# Add contact route - Ensure proper validation for user_id and contact_username
+# Add contact route
 @app.post("/add_contact")
 def add_contact(request_data: AddContactRequest, db: Session = Depends(get_db)):
-    # Check if user_id and contact_username are valid
+    # Validate user_id and contact_username
     if not request_data.user_id or not request_data.contact_username:
         raise HTTPException(status_code=422, detail="User ID and contact username are required")
 
-    # Find the contact in the Users table
+    # Find contact by username
     contact = db.query(User).filter(User.username == request_data.contact_username).first()
 
     if not contact:
         raise HTTPException(status_code=404, detail="Contact not found")
 
-    # Check if contact already exists for this user
+    # Check if contact already exists
     existing_contact = db.query(Contact).filter_by(user_id=request_data.user_id, contact_id=contact.id).first()
     if existing_contact:
         raise HTTPException(status_code=400, detail="Contact already added")
@@ -130,32 +128,23 @@ def add_contact(request_data: AddContactRequest, db: Session = Depends(get_db)):
     db.add(new_contact)
     db.commit()
 
-    return {"message": f"Contact {request_data.contact_username} added successfully"}
+    return {"message": "Contact added successfully"}
 
 
-# Get contacts route - Ensure user_id is valid
+# Get contacts route
 @app.get("/get_contacts/{user_id}")
 def get_contacts(user_id: uuid.UUID, db: Session = Depends(get_db)):
     if not user_id:
         raise HTTPException(status_code=422, detail="User ID is required")
 
-    # Fetch contacts for the given user_id
+    # Fetch contacts
     contacts = db.query(Contact).filter_by(user_id=user_id).all()
 
     if not contacts:
         return {"message": "No contacts found"}
 
-    contact_list = []
-    for contact in contacts:
-        contact_user = db.query(User).filter_by(id=contact.contact_id).first()
-        contact_list.append({"username": contact_user.username})
-
+    contact_list = [{"username": db.query(User).filter_by(id=contact.contact_id).first().username} for contact in contacts]
     return contact_list
-
-
-# GraphQL route
-graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
 
 
 # Pydantic model for sending a message
@@ -164,17 +153,18 @@ class SendMessageRequest(BaseModel):
     receiver_id: uuid.UUID
     content: str
 
-# Route to send a message
+
+# Route to send message
 @app.post("/send_message")
 def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)):
-    # Ensure both sender and receiver exist
+    # Verify sender and receiver exist
     sender = db.query(User).filter(User.id == request_data.sender_id).first()
     receiver = db.query(User).filter(User.id == request_data.receiver_id).first()
 
     if not sender or not receiver:
         raise HTTPException(status_code=404, detail="Sender or receiver not found")
 
-    # Save the message to the database
+    # Save message to database
     new_message = Message(
         sender_id=request_data.sender_id,
         receiver_id=request_data.receiver_id,
@@ -187,6 +177,7 @@ def send_message(request_data: SendMessageRequest, db: Session = Depends(get_db)
     return {"message": "Message sent successfully"}
 
 
+# Route to get messages
 @app.get("/get_messages/{user_id}/{contact_id}")
 def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depends(get_db)):
     # Fetch all messages between the user and the contact
@@ -196,12 +187,10 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
     ).order_by(Message.timestamp).all()
 
     if not messages:
-        return {"messages": []}  # Return an empty array if no messages are found
+        return {"messages": []}  # Return an empty list if no messages
 
-    # Format the messages for the frontend
-    formatted_messages = [
-        {"sender": message.sender.username, "content": message.content, "timestamp": message.timestamp} for message in
-        messages]
+    formatted_messages = [{"sender": message.sender.username, "content": message.content, "timestamp": message.timestamp}
+                          for message in messages]
 
     return {"messages": formatted_messages}
 
@@ -209,4 +198,4 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8088)
+    uvicorn.run(app, host="127.0.0.1", port=8091)

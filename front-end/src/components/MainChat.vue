@@ -1,51 +1,37 @@
 <template>
   <div class="outer-container">
-    <!-- Left sidebar for contact list -->
     <div class="left-sidebar">
       <h3>Contacts</h3>
       <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
       <button @click="addContact">Add Contact</button>
-
-      <!-- List of contacts -->
       <ul>
         <li
           v-for="(contact, index) in sortedContacts"
           :key="index"
           :class="{ selected: contact === selectedContact }"
           @click="selectContact(contact)"
-          @mousedown="startHold(contact)"
-          @mouseup="endHold"
-          @mouseleave="endHold"
         >
-          {{ contact.username }} <!-- Display contacts by username -->
+          {{ contact.username }}
         </li>
       </ul>
     </div>
 
-    <!-- Chat window showing open chats -->
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
           <div v-if="!selectedContact" class="no-chat">No chat selected</div>
           <div v-if="selectedContact" class="chat-header">
-            Chat with {{ selectedContact.username }} <!-- Display chat with selected contact -->
+            Chat with {{ selectedContact.username }}
           </div>
 
-          <!-- Messages sent to the selected contact -->
           <div v-for="(message, index) in currentMessages" :key="index" class="message">
-            {{ message }}
+            {{ message.sender }}: {{ message.content }}
           </div>
         </div>
       </div>
 
-      <!-- Message input only if a contact is selected -->
       <div v-if="selectedContact" class="input-container">
-        <input
-          type="text"
-          v-model="messageInput"
-          placeholder="Type your message"
-          @keyup.enter="sendMessage"
-        />
+        <input type="text" v-model="messageInput" placeholder="Type your message" @keyup.enter="sendMessage" />
         <button @click="sendMessage">Send</button>
       </div>
     </div>
@@ -58,10 +44,9 @@ export default {
     return {
       newContact: '',        // Input for adding a new contact
       contacts: [],          // List of contacts fetched from DB
-      selectedContact: null,  // Currently selected contact (start as null)
+      selectedContact: null,  // Currently selected contact
       messageInput: '',      // Input field for the message
-      messages: {},          // Store messages for each contact (optional)
-      holdTimeout: null      // Used for long press to delete contact
+      messages: {},          // Store messages for each contact
     };
   },
   computed: {
@@ -89,17 +74,14 @@ export default {
         });
 
         if (response.ok) {
-          // Successfully added contact to the database
-          this.contacts.push({ username: contact_username });
+          // Fetch contacts again after adding new one
+          this.fetchContacts();
           this.newContact = '';  // Clear the input field
         } else {
           const errorData = await response.json();
           alert("Failed to add contact: " + errorData.detail);
         }
       }
-    },
-    selectContact(contact) {
-      this.selectedContact = contact; // Make sure selectedContact is the entire contact object
     },
     async fetchContacts() {
       const user_id = this.getLoggedInUserId();
@@ -113,7 +95,7 @@ export default {
         const response = await fetch(`/api/get_contacts/${user_id}`);
         if (response.ok) {
           const data = await response.json();
-          this.contacts = data.message === "No contacts found" ? [] : data;  // Set contacts or empty array
+          this.contacts = data.message === "No contacts found" ? [] : data;
         } else {
           alert("Failed to fetch contacts.");
         }
@@ -121,22 +103,79 @@ export default {
         console.error("Error fetching contacts:", error);
       }
     },
+    async selectContact(contact) {
+      this.selectedContact = contact;
+
+      // Fetch messages for the selected contact
+      const user_id = this.getLoggedInUserId();
+      try {
+        const response = await fetch(`/api/get_messages/${user_id}/${contact.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          this.messages[this.selectedContact.username] = data.messages;
+        } else {
+          alert("Failed to fetch messages.");
+        }
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    },
+    async sendMessage() {
+      const sender_id = this.getLoggedInUserId();
+      const receiver_id = this.selectedContact.id;
+      const content = this.messageInput;
+
+      if (!sender_id || !receiver_id || !content.trim()) {
+        alert("Message or contact is missing.");
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/send_message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender_id, receiver_id, content }),
+        });
+
+        if (response.ok) {
+          if (!this.messages[this.selectedContact.username]) {
+            this.messages[this.selectedContact.username] = [];
+          }
+          this.messages[this.selectedContact.username].push({
+            sender: 'You',
+            content: this.messageInput
+          });
+          this.messageInput = '';  // Clear the input field
+          this.scrollChatToBottom();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to send message: " + errorData.detail);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+    },
+    scrollChatToBottom() {
+      const chatContainer = this.$el.querySelector('#chatContainer');
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    },
     getLoggedInUserId() {
-      // Retrieve logged-in user's ID (stored in localStorage)
       const userId = localStorage.getItem('user_id');
       if (!userId) {
-        alert("User not logged in");
-        this.$router.push('/login');  // Redirect to login if no user_id is found
+        alert('User not logged in');
+        this.$router.push('/login');
       }
       return userId;
     }
   },
   mounted() {
-    // Fetch contacts from the database when the component is mounted
     this.fetchContacts();
   }
 };
 </script>
+
 
 <style scoped>
 /* Overall container with flexbox for chat and contacts */
