@@ -273,8 +273,19 @@ def send_message_to_group(group_id: int, message: MessageCreate, db: Session = D
     return db_message
 
 
+@app.get("/groups/{user_id}")
+def get_groups(user_id: uuid.UUID, db: Session = Depends(get_db)):
+    groups = db.query(Group).filter(Group.members.any(user_id=user_id)).all()
+
+    if not groups:
+        return {"groups": []}  # Return an empty list if no groups found
+
+    group_list = [{"group_name": group.group_name, "id": group.id} for group in groups]
+
+    return {"groups": group_list}
+
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8109)
+    uvicorn.run(app, host="127.0.0.1", port=8111)
