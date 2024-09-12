@@ -6,7 +6,7 @@
     <!-- Contacts Button -->
     <button @click="toggleContacts" class="contacts-button">Contacts</button>
 
-    <!-- Sidebar that appears next to the chat container and under the Contacts button -->
+    <!-- Sidebar with contact list under the Contacts button -->
     <div v-show="showContacts" class="left-sidebar">
       <h3>Contacts</h3>
       <div class="contact-input">
@@ -30,9 +30,9 @@
       </ul>
     </div>
 
-    <!-- Chat container with black border -->
-    <div class="centered-container">
-      <div class="chat-window">
+    <!-- Chat container without rounded corners when a chat is active -->
+    <div class="centered-container" :class="{ 'no-round': selectedContact }">
+      <div class="chat-window" :class="{ 'no-round': selectedContact }">
         <div class="chat-container" id="chatContainer">
           <div v-if="!selectedContact" class="no-chat">No chat selected</div>
           <div v-if="selectedContact" class="chat-header">
@@ -57,6 +57,7 @@
     </div>
   </div>
 </template>
+
 <script>
 export default {
   data() {
@@ -268,6 +269,7 @@ export default {
 };
 </script>
 
+
 <style scoped>
 /* Overall container with flexbox for chat and contacts */
 .outer-container {
@@ -282,8 +284,8 @@ export default {
 /* Button for showing contacts */
 .contacts-button {
   position: absolute;
-  top: 150px; /* Adjust button position */
-  left: 300px;
+  top: 150px;
+  left: 250px; /* Move the button more to the left */
   background-color: lightblue;
   color: white;
   border: none;
@@ -307,11 +309,11 @@ export default {
   font-weight: bold;
 }
 
-/* Sidebar for the contact list, right next to chat container */
+/* Sidebar with contact list directly under the Contacts button */
 .left-sidebar {
   position: absolute;
-  top: 100px;
-  left: 510px; /* Adjust position to align with the container */
+  top: 200px; /* Directly under the Contacts button */
+  left: 250px; /* Move the container more to the left */
   width: 200px;
   height: auto;
   background-color: #fff;
@@ -334,6 +336,7 @@ export default {
   margin-right: 5px;
   border-radius: 4px;
   border: 1px solid #ddd;
+  color: black; /* Black text for contact input */
 }
 
 .small-add-button {
@@ -358,6 +361,7 @@ export default {
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.3s ease;
+  color: black; /* Black text for contacts */
 }
 
 .left-sidebar li.selected {
@@ -368,12 +372,12 @@ export default {
   background-color: #ddd;
 }
 
-/* Chat container with extended length */
+/* Chat container without rounded corners when a chat is selected */
 .centered-container {
   width: 100%;
-  max-width: 450px; /* Adjusted to make chat wider */
+  max-width: 450px;
   height: 100%;
-  max-height: 800px; /* Extended length */
+  max-height: 800px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -381,6 +385,11 @@ export default {
   border-radius: 30px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border: 1px solid black;
+}
+
+/* Remove rounded corners when a contact is selected */
+.centered-container.no-round {
+  border-radius: 0px; /* Remove rounding */
 }
 
 /* Chat window styling */
@@ -393,12 +402,15 @@ export default {
   overflow: hidden;
 }
 
+.chat-window.no-round {
+  border-radius: 0px; /* Remove rounding of chat window when a contact is selected */
+}
+
 .chat-container {
   flex: 1;
   padding: 15px;
   overflow-y: auto;
   background-color: lightblue;
-  border-radius: 30px;
 }
 
 .chat-header {
@@ -418,8 +430,6 @@ export default {
   display: flex;
   padding: 10px;
   background-color: lightgrey;
-  border-bottom-left-radius: 30px;
-  border-bottom-right-radius: 30px;
 }
 
 input[type="text"] {
