@@ -51,3 +51,34 @@ class Contact(Base):
 
     def __repr__(self):
         return f"<Contact(user_id={self.user_id}, contact_id={self.contact_id})>"
+
+# New GroupMember table to store group members
+class GroupMember(Base):
+    __tablename__ = "group_members"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("Users.id"), nullable=False)
+    joined_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    group = relationship("Group", foreign_keys=[group_id])
+    user = relationship("User", foreign_keys=[user_id])
+
+    def __repr__(self):
+        return f"<GroupMember(group_id={self.group_id}, user_id={self.user_id})>"
+
+# New GroupMessage table to store messages in groups
+class GroupMessage(Base):
+    __tablename__ = "group_messages"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=False)
+    sender_id = Column(UUID(as_uuid=True), ForeignKey("Users.id"), nullable=False)
+    content = Column(String, nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    group = relationship("Group", foreign_keys=[group_id])
+    sender = relationship("User", foreign_keys=[sender_id])
+
+    def __repr__(self):
+        return f"<GroupMessage(group_id={self.group_id}, sender_id={self.sender_id}, content={self.content})>"
