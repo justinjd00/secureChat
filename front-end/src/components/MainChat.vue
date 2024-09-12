@@ -15,7 +15,23 @@
         </li>
       </ul>
     </div>
-
+    <div class="left-sidebar">
+      <h3>Contacts</h3>
+      <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
+      <button @click="addContact">Add Contact</button>
+      <ul>
+        <li
+          v-for="(contact, index) in sortedContacts"
+          :key="index"
+          :class="{ selected: contact === selectedContact }"
+          @click="selectContact(contact)"
+        >
+          {{ contact.username }}
+          <button @click.stop="deleteContact(contact)">Delete</button>
+        </li>
+      </ul>
+      <button @click="logout">Logout</button>
+    </div>
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
@@ -63,6 +79,34 @@ export default {
     }
   },
   methods: {
+    async logout() {
+      // Clear local storage and redirect to the login page
+      localStorage.removeItem('user_id');
+      this.$router.push('/');
+    },
+
+    async deleteContact(contact) {
+      const user_id = this.getLoggedInUserId();
+      if (!user_id) {
+        alert("No user ID found. Please log in again.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/delete_contact/${user_id}/${contact.id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          alert("Contact deleted successfully");
+          this.fetchContacts(); // Refresh the contact list after deletion
+        } else {
+          alert("Failed to delete contact");
+        }
+      } catch (error) {
+        console.error("Error deleting contact:", error);
+      }
+    },
     async addContact() {
       const user_id = this.getLoggedInUserId();
       const contact_username = this.newContact;
@@ -181,7 +225,7 @@ export default {
       const userId = localStorage.getItem('user_id');
       if (!userId) {
         alert('User not logged in');
-        this.$router.push('/login');
+        this.$router.push('/');
       }
       return userId;
     }
