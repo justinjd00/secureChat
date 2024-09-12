@@ -1,11 +1,18 @@
 <template>
   <div class="outer-container">
-    <div class="left-sidebar">
+    <!-- Logout Button at the top right corner -->
+    <button @click="logout" class="logout-button">Logout</button>
+
+    <!-- Contacts Button -->
+    <button @click="toggleContacts" class="contacts-button">Contacts</button>
+
+    <!-- Sidebar that appears under the Contacts button -->
+    <div :class="['left-sidebar', { 'show': showContacts }]">
       <h3>Contacts</h3>
       <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
-      <button @click="addContact">Add Contact</button>
+      <button @click="addContact" class="add-contact-button">Add Contact</button>
       <ul>
-        <!-- List of contacts with long press for deletion -->
+        <!-- Displaying the list of contacts -->
         <li
           v-for="(contact, index) in sortedContacts"
           :key="index"
@@ -18,9 +25,9 @@
           {{ contact.username }}
         </li>
       </ul>
-      <button @click="logout">Logout</button>
     </div>
 
+    <!-- Chat container with black border -->
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
@@ -37,11 +44,11 @@
 
       <div v-if="selectedContact" class="input-container">
         <input type="text" v-model="messageInput" placeholder="Type your message" @keyup.enter="sendMessage" />
-        <button @click="sendMessage">Send</button>
+        <button @click="sendMessage" class="send-button">Send</button>
       </div>
     </div>
 
-    <!-- Context menu for delete -->
+    <!-- Right-click context menu for delete -->
     <div v-if="showMenu" :style="{ top: menuY + 'px', left: menuX + 'px' }" class="context-menu">
       <button @click="deleteContact(menuContact)">Delete Contact</button>
     </div>
@@ -61,24 +68,21 @@ export default {
       menuX: 0,
       menuY: 0,
       menuContact: null,
-      pressTimer: null
+      pressTimer: null,
+      showContacts: false, // Controls the visibility of the sidebar
     };
-  },
-  computed: {
-    sortedContacts() {
-      return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username));
-    },
-    currentMessages() {
-      if (this.selectedContact) {
-        return this.messages[this.selectedContact.username] || [];
-      }
-      return [];
-    }
   },
   methods: {
     async logout() {
       localStorage.removeItem('user_id');
       this.$router.push('/');
+    },
+
+    toggleContacts() {
+      this.showContacts = !this.showContacts;
+      if (this.showContacts) {
+        this.fetchContacts(); // Fetch contacts when the sidebar is shown
+      }
     },
 
     async deleteContact(contact) {
@@ -252,17 +256,6 @@ export default {
 </script>
 
 <style scoped>
-/* Context menu styles */
-.context-menu {
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  padding: 5px;
-  z-index: 1000;
-}
-
 /* Overall container with flexbox for chat and contacts */
 .outer-container {
   display: flex;
@@ -270,41 +263,78 @@ export default {
   align-items: center;
   height: 100vh;
   background-color: #f0f0f0;
+  position: relative;
 }
 
-/* Left sidebar for contact list */
+/* Button for showing contacts */
+.contacts-button {
+  position: absolute;
+  top: 150px; /* Lowering the button */
+  left: 300px; /* Moved slightly to the right */
+  background-color: lightblue;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Logout button at the top right */
+.logout-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: lightblue;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Sidebar for the contact list, initially hidden */
 .left-sidebar {
+  position: absolute;
+  top: 100px; /* Below the Contacts button */
+  left: 10px;
   width: 200px;
-  height: 100%;
+  height: auto;
   background-color: #fff;
-  border-right: 1px solid #ddd;
+  border: 1px solid #ddd;
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  display: none; /* Initially hidden */
+  z-index: 10;
 }
 
-.left-sidebar h3 {
-  text-align: center;
+.left-sidebar.show {
+  display: block; /* Sidebar shown when class 'show' is added */
 }
 
+/* Input styling in the sidebar */
 .left-sidebar input {
   width: 100%;
-  padding: 10px;
+  padding: 8px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   outline: none;
-  color: black;
 }
 
-.left-sidebar button {
+/* Add contact button inside the sidebar */
+.add-contact-button {
   width: 100%;
   padding: 10px;
-  margin-bottom: 10px;
-  background-color: lightblue; /* Updated color */
+  background-color: lightblue;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .left-sidebar ul {
@@ -312,26 +342,25 @@ export default {
   padding: 0;
 }
 
+/* Contact list styling */
 .left-sidebar li {
-  padding: 10px;
+  padding: 8px;
   background-color: #f0f0f0;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   cursor: pointer;
   border-radius: 4px;
-  transition: background-color 0.3s ease, padding-left 0.3s ease;
-  color: black;
+  transition: background-color 0.3s ease;
+}
+
+.left-sidebar li.selected {
+  background-color: darkgray;
 }
 
 .left-sidebar li:hover {
   background-color: #ddd;
 }
 
-.left-sidebar li.selected {
-  background-color: darkgray;
-  padding-left: 10px;
-}
-
-/* Chat window styling */
+/* Chat container with black border and rounded bottom corners */
 .centered-container {
   width: 100%;
   max-width: 400px;
@@ -341,17 +370,18 @@ export default {
   flex-direction: column;
   justify-content: space-between;
   background-color: white;
-  border-radius: 30px;
+  border-radius: 30px; /* Rounded corners on all sides */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid black; /* Black border around chat */
 }
 
+/* Chat window styling */
 .chat-window {
   display: flex;
   flex-direction: column;
   flex: 1;
   background-color: lightblue;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  border-radius: 30px; /* Full rounded corners */
   overflow: hidden;
 }
 
@@ -360,8 +390,7 @@ export default {
   padding: 15px;
   overflow-y: auto;
   background-color: lightblue;
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  border-radius: 30px; /* Ensures bottom is rounded */
 }
 
 .chat-header {
@@ -393,26 +422,41 @@ input[type="text"] {
   color: black;
 }
 
-button {
+.send-button {
   margin-left: 10px;
   padding: 10px 20px;
-  background-color: lightblue; /* Updated color */
+  background-color: lightblue;
   color: white;
   border: none;
   border-radius: 20px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-button:hover {
+.send-button:hover {
   background-color: darkolivegreen;
 }
 
-.message {
-  padding: 5px;
-  margin-bottom: 5px;
-  background-color: #e0e0e0;
-  border-radius: 8px;
-  word-wrap: break-word;
+/* Context menu for right-click delete */
+.context-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 100;
+}
+
+.context-menu button {
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.context-menu button:hover {
+  background-color: darkred;
 }
 </style>

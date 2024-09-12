@@ -197,7 +197,21 @@ def get_messages(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depend
     return {"messages": formatted_messages}
 
 
+
+# Delete contact route
+@app.delete("/delete_contact/{user_id}/{contact_id}")
+def delete_contact(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depends(get_db)):
+    contact = db.query(Contact).filter_by(user_id=user_id, contact_id=contact_id).first()
+
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+
+    db.delete(contact)
+    db.commit()
+
+    return {"message": "Contact deleted successfully"}
+
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8101)
+    uvicorn.run(app, host="127.0.0.1", port=8105)
