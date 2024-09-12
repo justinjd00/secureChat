@@ -10,6 +10,7 @@ import sys
 import os
 from auth.authentication import pwd_context, verify_password
 from mutations import Mutation
+from fastapi.responses import JSONResponse
 app = FastAPI()
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +23,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+@app.options("/{path:path}")
+async def preflight_handler():
+    return JSONResponse({"message": "Preflight request allowed"}, headers={
+        "Access-Control-Allow-Origin": "*",  # or specify the allowed origin
+        "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    })
 
 # Pydantic model for signup
 class UserCreate(BaseModel):
@@ -224,13 +231,16 @@ class MessageCreate(BaseModel):
     content: str
 
 
-@app.post("/groups/", response_model=GroupCreate)
-def create_group(group: GroupCreate, db: Session = Depends(get_db)):
-    db_group = Group(group_name=group.group_name)
-    db.add(db_group)
-    db.commit()
-    db.refresh(db_group)
-    return db_group
+@app.post("/groups")
+async def create_group(group: GroupCreate, db: Session = Depends(get_db)):
+    try:
+        db_group = Group(group_name=group.group_name)
+        db.add(db_group)
+        db.commit()
+        db.refresh(db_group)
+        return {"message": "Group created successfully", "group_id": db_group.id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/groups/{group_id}/members/", response_model=GroupMemberAdd)
@@ -267,4 +277,4 @@ def send_message_to_group(group_id: int, message: MessageCreate, db: Session = D
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="127.0.0.1", port=8105)
+    uvicorn.run(app, host="127.0.0.1", port=8109)
