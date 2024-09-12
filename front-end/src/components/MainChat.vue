@@ -5,33 +5,22 @@
       <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
       <button @click="addContact">Add Contact</button>
       <ul>
+        <!-- List of contacts with long press for deletion -->
         <li
           v-for="(contact, index) in sortedContacts"
           :key="index"
           :class="{ selected: contact === selectedContact }"
           @click="selectContact(contact)"
+          @contextmenu.prevent="showDeleteMenu(contact, $event)"
+          @mousedown="startPress(contact)"
+          @mouseup="clearPress"
         >
           {{ contact.username }}
-        </li>
-      </ul>
-    </div>
-    <div class="left-sidebar">
-      <h3>Contacts</h3>
-      <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
-      <button @click="addContact">Add Contact</button>
-      <ul>
-        <li
-          v-for="(contact, index) in sortedContacts"
-          :key="index"
-          :class="{ selected: contact === selectedContact }"
-          @click="selectContact(contact)"
-        >
-          {{ contact.username }}
-          <button @click.stop="deleteContact(contact)">Delete</button>
         </li>
       </ul>
       <button @click="logout">Logout</button>
     </div>
+
     <div class="centered-container">
       <div class="chat-window">
         <div class="chat-container" id="chatContainer">
@@ -51,6 +40,11 @@
         <button @click="sendMessage">Send</button>
       </div>
     </div>
+
+    <!-- Context menu for delete -->
+    <div v-if="showMenu" :style="{ top: menuY + 'px', left: menuX + 'px' }" class="context-menu">
+      <button @click="deleteContact(menuContact)">Delete Contact</button>
+    </div>
   </div>
 </template>
 
@@ -58,20 +52,23 @@
 export default {
   data() {
     return {
-      newContact: '',        // Input for adding a new contact
-      contacts: [],          // List of contacts fetched from DB
-      selectedContact: null,  // Currently selected contact
-      messageInput: '',      // Input field for the message
-      messages: {},          // Store messages for each contact
+      newContact: '',
+      contacts: [],
+      selectedContact: null,
+      messageInput: '',
+      messages: {},
+      showMenu: false,
+      menuX: 0,
+      menuY: 0,
+      menuContact: null,
+      pressTimer: null
     };
   },
   computed: {
     sortedContacts() {
-      // Sort contacts alphabetically by username
       return [...this.contacts].sort((a, b) => a.username.localeCompare(b.username));
     },
     currentMessages() {
-      // Return messages for the currently selected contact
       if (this.selectedContact) {
         return this.messages[this.selectedContact.username] || [];
       }
@@ -80,7 +77,6 @@ export default {
   },
   methods: {
     async logout() {
-      // Clear local storage and redirect to the login page
       localStorage.removeItem('user_id');
       this.$router.push('/');
     },
@@ -106,7 +102,29 @@ export default {
       } catch (error) {
         console.error("Error deleting contact:", error);
       }
+
+      // Hide the context menu after deleting the contact
+      this.showMenu = false;
     },
+
+    showDeleteMenu(contact, event) {
+      this.menuX = event.clientX;
+      this.menuY = event.clientY;
+      this.menuContact = contact;
+      this.showMenu = true;
+    },
+
+    startPress(contact) {
+      this.pressTimer = setTimeout(() => {
+        this.menuContact = contact;
+        this.showMenu = true;
+      }, 1000); // Long press time of 1 second
+    },
+
+    clearPress() {
+      clearTimeout(this.pressTimer); // Cancel the long press if the user lifts the mouse before 1 second
+    },
+
     async addContact() {
       const user_id = this.getLoggedInUserId();
       const contact_username = this.newContact;
@@ -173,48 +191,44 @@ export default {
     },
 
     async sendMessage() {
-  const sender_id = this.getLoggedInUserId();
-  const receiver_id = this.selectedContact?.id;
-  const content = this.messageInput;
+      const sender_id = this.getLoggedInUserId();
+      const receiver_id = this.selectedContact?.id;
+      const content = this.messageInput;
 
-  console.log("Sending message from:", sender_id, "to:", receiver_id, "content:", content);
-
-  if (!sender_id || !receiver_id || !content.trim()) {
-    alert("Message or contact is missing.");
-    return;
-  }
-
-  try {
-    const response = await fetch('/api/send_message', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ sender_id, receiver_id, content }),
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      if (!this.messages[this.selectedContact.username]) {
-        this.messages[this.selectedContact.username] = [];
+      if (!sender_id || !receiver_id || !content.trim()) {
+        alert("Message or contact is missing.");
+        return;
       }
-      this.messages[this.selectedContact.username].push({
-        sender: 'You',
-        content: result.data.content,
-        timestamp: result.data.timestamp
-      });
-      this.messageInput = '';  // Clear the input field
-      this.scrollChatToBottom();
-    } else {
-      const errorData = await response.json();
-      alert("Failed to send message: " + errorData.detail);
-    }
-  } catch (error) {
-    console.error("Error sending message:", error);
-  }
-},
 
+      try {
+        const response = await fetch('/api/send_message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender_id, receiver_id, content }),
+        });
 
+        if (response.ok) {
+          const result = await response.json();
+          if (!this.messages[this.selectedContact.username]) {
+            this.messages[this.selectedContact.username] = [];
+          }
+          this.messages[this.selectedContact.username].push({
+            sender: 'You',
+            content: result.data.content,
+            timestamp: result.data.timestamp
+          });
+          this.messageInput = '';  // Clear the input field
+          this.scrollChatToBottom();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to send message: " + errorData.detail);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
+    },
 
     scrollChatToBottom() {
       const chatContainer = this.$el.querySelector('#chatContainer');
@@ -237,8 +251,18 @@ export default {
 };
 </script>
 
-
 <style scoped>
+/* Context menu styles */
+.context-menu {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  z-index: 1000;
+}
+
 /* Overall container with flexbox for chat and contacts */
 .outer-container {
   display: flex;
@@ -276,7 +300,7 @@ export default {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
-  background-color: olive;
+  background-color: lightblue; /* Updated color */
   color: white;
   border: none;
   border-radius: 4px;
@@ -372,7 +396,7 @@ input[type="text"] {
 button {
   margin-left: 10px;
   padding: 10px 20px;
-  background-color: olive;
+  background-color: lightblue; /* Updated color */
   color: white;
   border: none;
   border-radius: 20px;
