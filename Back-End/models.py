@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID  # Verwenden von UUID-Typ
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 import uuid
+from datetime import datetime
 
 Base = declarative_base()
 
@@ -51,6 +52,17 @@ class Contact(Base):
 
     def __repr__(self):
         return f"<Contact(user_id={self.user_id}, contact_id={self.contact_id})>"
+
+# New Group table to store groups
+class Group(Base):
+    __tablename__ = "groups"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    group_name = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    def __repr__(self):
+        return f"<Group(group_name={self.group_name})>"
 
 # New GroupMember table to store group members
 class GroupMember(Base):

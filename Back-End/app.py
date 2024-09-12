@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from datetime import datetime
-from models import User, Contact, Message
+from models import User, Contact, Message, GroupMessage, GroupMember,Group
 from config import get_db
 import uuid
 import sys
@@ -222,6 +222,48 @@ class MessageCreate(BaseModel):
     group_id: int
     sender_id: str
     content: str
+
+
+@app.post("/groups/", response_model=GroupCreate)
+def create_group(group: GroupCreate, db: Session = Depends(get_db)):
+    db_group = Group(group_name=group.group_name)
+    db.add(db_group)
+    db.commit()
+    db.refresh(db_group)
+    return db_group
+
+
+@app.post("/groups/{group_id}/members/", response_model=GroupMemberAdd)
+def add_member_to_group(group_id: int, user_id: str, db: Session = Depends(get_db)):
+    db_group = db.query(Group).filter(Group.id == group_id).first()
+    if not db_group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    db_member = GroupMember(group_id=group_id, user_id=user_id)
+    db.add(db_member)
+    db.commit()
+    db.refresh(db_member)
+    return db_member
+
+
+@app.post("/groups/{group_id}/messages/", response_model=MessageCreate)
+def send_message_to_group(group_id: int, message: MessageCreate, db: Session = Depends(get_db)):
+    db_group = db.query(Group).filter(Group.id == group_id).first()
+    if not db_group:
+        raise HTTPException(status_code=404, detail="Group not found")
+
+    db_message = GroupMessage(
+        group_id=group_id,
+        sender_id=message.sender_id,
+        content=message.content
+    )
+    db.add(db_message)
+    db.commit()
+    db.refresh(db_message)
+    return db_message
+
+
+
 if __name__ == "__main__":
     import uvicorn
 
