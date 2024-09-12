@@ -211,6 +211,17 @@ def delete_contact(user_id: uuid.UUID, contact_id: uuid.UUID, db: Session = Depe
 
     return {"message": "Contact deleted successfully"}
 
+class GroupCreate(BaseModel):
+    group_name: str
+
+class GroupMemberAdd(BaseModel):
+    group_id: int
+    user_id: str
+
+class MessageCreate(BaseModel):
+    group_id: int
+    sender_id: str
+    content: str
 if __name__ == "__main__":
     import uvicorn
 
