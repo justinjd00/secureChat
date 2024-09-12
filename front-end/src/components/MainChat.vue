@@ -1,6 +1,6 @@
 <template>
   <div class="outer-container">
-    <!-- Logout Button at the top right corner -->
+    <!-- Logout Button -->
     <button @click="logout" class="logout-button">Logout</button>
 
     <!-- Contacts Button -->
@@ -9,37 +9,31 @@
     <!-- New Group Button -->
     <button @click="showGroupModal = true" class="new-group-button">New Group</button>
 
-    <!-- Sidebar with contact list under the Contacts button -->
+    <!-- Sidebar with contact list -->
     <div v-show="showContacts" class="left-sidebar">
       <h3>Contacts</h3>
-      <div class="contact-input">
-        <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
-        <!-- Small button for adding contact -->
-        <button @click="addContact" class="small-add-button">+</button>
-      </div>
       <ul>
-        <!-- Displaying the list of contacts -->
         <li
           v-for="(contact, index) in sortedContacts"
           :key="index"
           :class="{ selected: contact === selectedContact }"
           @click="selectContact(contact)"
-          @contextmenu.prevent="showDeleteMenu(contact, $event)"
-          @mousedown="startPress(contact)"
-          @mouseup="clearPress"
         >
           {{ contact.username }}
         </li>
       </ul>
     </div>
 
-    <!-- Chat container without rounded corners when a chat is active -->
-    <div class="centered-container" :class="{ 'no-round': selectedContact }">
-      <div class="chat-window" :class="{ 'no-round': selectedContact }">
+    <!-- Chat container -->
+    <div class="centered-container" :class="{ 'no-round': selectedContact || selectedGroup }">
+      <div class="chat-window" :class="{ 'no-round': selectedContact || selectedGroup }">
         <div class="chat-container" id="chatContainer">
-          <div v-if="!selectedContact" class="no-chat">No chat selected</div>
+          <div v-if="!selectedContact && !selectedGroup" class="no-chat">No chat selected</div>
           <div v-if="selectedContact" class="chat-header">
             Chat with {{ selectedContact.username }}
+          </div>
+          <div v-if="selectedGroup" class="chat-header">
+            Chat in Group: {{ selectedGroup.group_name }}
           </div>
 
           <div v-for="(message, index) in currentMessages" :key="index" class="message">
@@ -48,7 +42,7 @@
         </div>
       </div>
 
-      <div v-if="selectedContact" class="input-container">
+      <div v-if="selectedContact || selectedGroup" class="input-container">
         <input type="text" v-model="messageInput" placeholder="Type your message" @keyup.enter="sendMessage" />
         <button @click="sendMessage" class="send-button">Send</button>
       </div>
@@ -59,35 +53,39 @@
       <div class="modal-content">
         <h2>Create a New Group</h2>
         <input v-model="newGroupName" placeholder="Enter group name" />
+
+        <!-- Select contacts for the group -->
+        <h4>Select Contacts:</h4>
+        <ul>
+          <li v-for="contact in contacts" :key="contact.id" @click="toggleContactSelection(contact)">
+            <span :class="{ 'selected-contact': selectedContactsForGroup.includes(contact) }">
+              {{ contact.username }}
+            </span>
+          </li>
+        </ul>
+
         <button @click="createGroup" class="modal-button">Create Group</button>
         <button @click="showGroupModal = false" class="modal-button cancel">Cancel</button>
       </div>
-    </div>
-
-    <!-- Right-click context menu for delete -->
-    <div v-if="showMenu" :style="{ top: menuY + 'px', left: menuX + 'px' }" class="context-menu">
-      <button @click="deleteContact(menuContact)">Delete Contact</button>
     </div>
   </div>
 </template>
 
 <script>
-export default {
+ export default {
   data() {
     return {
       newContact: '',
-      contacts: [],
-      selectedContact: null,
+      contacts: [], // To store contacts
+      groups: [], // To store created groups
+      selectedContactsForGroup: [], // To store selected contacts for the group
+      selectedContact: null, // To store the selected contact
+      selectedGroup: null, // For group selection
       messageInput: '',
-      messages: {},
-      showMenu: false,
-      menuX: 0,
-      menuY: 0,
-      menuContact: null,
-      pressTimer: null,
-      showContacts: false, // Controls the visibility of the sidebar
-      showGroupModal: false, // Controls the visibility of the group creation modal
-      newGroupName: '' // New group name
+      messages: {}, // Stores messages
+      showContacts: false, // Controls sidebar visibility
+      showGroupModal: false, // Controls group modal visibility
+      newGroupName: '', // Stores the new group name
     };
   },
   computed: {
@@ -97,6 +95,8 @@ export default {
     currentMessages() {
       if (this.selectedContact) {
         return this.messages[this.selectedContact.username] || [];
+      } else if (this.selectedGroup) {
+        return this.messages[this.selectedGroup.group_name] || [];
       }
       return [];
     }
@@ -110,36 +110,21 @@ export default {
     toggleContacts() {
       this.showContacts = !this.showContacts;
       if (this.showContacts) {
-        this.fetchContacts(); // Fetch contacts when the sidebar is shown
+        this.fetchContacts();
       }
     },
 
-    async addContact() {
-      const user_id = this.getLoggedInUserId();
-      const contact_username = this.newContact;
-
-      if (contact_username) {
-        const response = await fetch('/api/add_contact', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ user_id, contact_username }),
-        });
-
-        if (response.ok) {
-          this.fetchContacts();  // Fetch contacts again after adding new one
-          this.newContact = '';  // Clear the input field
-        } else {
-          const errorData = await response.json();
-          alert("Failed to add contact: " + errorData.detail);
-        }
+    toggleContactSelection(contact) {
+      // Toggle contact selection for group
+      if (this.selectedContactsForGroup.includes(contact)) {
+        this.selectedContactsForGroup = this.selectedContactsForGroup.filter(c => c !== contact);
+      } else {
+        this.selectedContactsForGroup.push(contact);
       }
     },
 
     async fetchContacts() {
       const user_id = this.getLoggedInUserId();
-
       try {
         const response = await fetch(`/api/get_contacts/${user_id}`);
         if (response.ok) {
@@ -156,30 +141,53 @@ export default {
       }
     },
 
-    async selectContact(contact) {
-      if (!contact.id || !contact.username) {
-        alert("Invalid contact selected. Contact must have a username and id.");
+    async createGroup() {
+      if (!this.newGroupName.trim()) {
+        alert("Group name is required.");
         return;
       }
 
-      this.selectedContact = contact;
+      if (this.selectedContactsForGroup.length === 0) {
+        alert("Please select at least one contact.");
+        return;
+      }
 
-      const user_id = this.getLoggedInUserId();
       try {
-        const response = await fetch(`/api/get_messages/${user_id}/${contact.id}`);
+        const response = await fetch('/api/groups', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            group_name: this.newGroupName,
+            member_ids: this.selectedContactsForGroup.map(contact => contact.id),
+          }),
+        });
+
         if (response.ok) {
-          const data = await response.json();
-          this.messages[this.selectedContact.username] = data.messages;
+          const result = await response.json();
+          this.groups.push(result);
+          this.showGroupModal = false;
+          this.newGroupName = '';
+          this.selectedContactsForGroup = [];
         } else {
           const errorData = await response.json();
-          console.error("Error fetching messages:", errorData.detail);
+          alert("Failed to create group: " + errorData.detail);
         }
       } catch (error) {
-        console.error("Error fetching messages:", error);
+        console.error("Error creating group:", error);
       }
     },
 
     async sendMessage() {
+      if (this.selectedGroup) {
+        await this.sendMessageToGroup();
+      } else if (this.selectedContact) {
+        await this.sendMessageToContact();
+      }
+    },
+
+    async sendMessageToContact() {
       const sender_id = this.getLoggedInUserId();
       const receiver_id = this.selectedContact?.id;
       const content = this.messageInput;
@@ -219,39 +227,45 @@ export default {
       }
     },
 
-    scrollChatToBottom() {
-      const chatContainer = this.$el.querySelector('#chatContainer');
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    async sendMessageToGroup() {
+      const sender_id = this.getLoggedInUserId();
+      const group_id = this.selectedGroup?.id;
+      const content = this.messageInput;
+
+      if (!sender_id || !group_id || !content.trim()) {
+        alert("Message or group is missing.");
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/send_group_message`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sender_id, group_id, content }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (!this.messages[this.selectedGroup.group_name]) {
+            this.messages[this.selectedGroup.group_name] = [];
+          }
+          this.messages[this.selectedGroup.group_name].push({
+            sender: 'You',
+            content: result.data.content,
+            timestamp: result.data.timestamp
+          });
+          this.messageInput = '';  // Clear the input field
+          this.scrollChatToBottom();
+        } else {
+          const errorData = await response.json();
+          alert("Failed to send group message: " + errorData.detail);
+        }
+      } catch (error) {
+        console.error("Error sending group message:", error);
+      }
     },
-
-   async createGroup() {
-  if (!this.newGroupName.trim()) {
-    alert("Group name is required.");
-    return;
-  }
-
-  try {
-    const response = await fetch('http://127.0.0.1:8105/groups', {  // Ensure correct backend URL
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ group_name: this.newGroupName }),
-    });
-
-    if (response.ok) {
-      alert("Group created successfully");
-      this.showGroupModal = false;
-      this.newGroupName = '';  // Clear the input field
-    } else {
-      const errorData = await response.json();
-      alert("Failed to create group: " + errorData.detail);
-    }
-  } catch (error) {
-    console.error("Error creating group:", error);
-  }
-}
-,
 
     getLoggedInUserId() {
       const userId = localStorage.getItem('user_id');
@@ -260,7 +274,7 @@ export default {
         this.$router.push('/');
       }
       return userId;
-    }
+    },
   },
 
   mounted() {
@@ -270,6 +284,74 @@ export default {
 </script>
 
 <style scoped>
+.outer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.contacts-button,
+.new-group-button {
+  margin: 10px;
+}
+
+.selected-contact {
+  font-weight: bold;
+}
+
+/* Styling for the overall layout */
+.contacts-button {
+  background-color: lightblue;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.new-group-button {
+  background-color: lightgreen;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+/* Modal styling */
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 100vh;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.modal-button {
+  background-color: lightblue;
+  padding: 10px;
+  border-radius: 4px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.outer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.contacts-button,
+.new-group-button {
+  margin: 10px;
+}
+
+.selected-contact {
+  font-weight: bold;
+}
 /* Overall container with flexbox for chat and contacts */
 .outer-container {
   display: flex;
