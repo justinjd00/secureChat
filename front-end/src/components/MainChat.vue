@@ -2,24 +2,34 @@
   <div class="outer-container">
     <button @click="logout" class="logout-button">Logout</button>
     <button @click="toggleContacts" class="contacts-button">Contacts</button>
-    <button @click="showGroupModal = true" class="new-group-button">New Group</button>
+    <button @click="toggleGroups" class="groups-button">Groups</button>
 
     <!-- Sidebar with contact list for chat -->
-    <div v-show="showContacts" class="left-sidebar">
+    <div v-show="showContacts" class="contact-sidebar">
       <h3>Contacts</h3>
       <input v-model="newContact" placeholder="Add a username" @keyup.enter="addContact" />
       <button @click="addContact">Add Contact</button>
-      <ul>
+      <ul class="contacts-list">
         <li
           v-for="(contact, index) in sortedContacts"
           :key="index"
           :class="{ selected: contact === selectedContact }"
         >
-          <div @click="selectContact(contact)">
+          <div class="contact-item" @click="selectContact(contact)">
             {{ contact.username }}
+            <button @click.stop="deleteContact(contact)" class="delete-button">✕</button>
           </div>
-          <!-- Delete button for each contact -->
-          <button @click="deleteContact(contact)" class="delete-button">Delete</button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Sidebar for groups -->
+    <div v-show="showGroups" class="group-sidebar">
+      <h3>Groups</h3>
+      <button @click="showGroupModal = true">New Group</button>
+      <ul class="groups-list">
+        <li v-for="(group, index) in groups" :key="index" @click="selectGroup(group)">
+          {{ group.group_name }}
         </li>
       </ul>
     </div>
@@ -50,28 +60,32 @@
 
     <!-- Group Modal -->
     <div v-if="showGroupModal" class="modal">
-      <div class="modal-content">
-        <h2>Create a New Group</h2>
-        <input v-model="newGroupName" placeholder="Enter group name" />
+  <div class="modal-content">
+    <h2>Create a New Group</h2>
+    <input v-model="newGroupName" placeholder="Enter group name" />
+    <h4>Select Contacts:</h4>
+    <ul class="contacts-list">
+      <li v-for="contact in contacts" :key="contact.id" @click="toggleGroupContactSelection(contact)">
+        <span :class="{ 'selected-group-contact': selectedContactsForGroup.includes(contact) }">
+          {{ contact.username }}
+        </span>
+      </li>
+    </ul>
+    <button @click="createGroup" class="modal-button">Create Group</button>
+    <button @click="showGroupModal = false" class="modal-button cancel">Cancel</button>
+  </div>
+</div>
 
-        <!-- Select contacts for the group -->
-        <h4>Select Contacts:</h4>
-        <ul>
-          <li v-for="contact in contacts" :key="contact.id" @click="toggleGroupContactSelection(contact)">
-            <span :class="{ 'selected-contact': selectedContactsForGroup.includes(contact) }">
-              {{ contact.username }}
-            </span>
-          </li>
-        </ul>
 
-        <button @click="createGroup" class="modal-button">Create Group</button>
-        <button @click="showGroupModal = false" class="modal-button cancel">Cancel</button>
-      </div>
-    </div>
+
+
+
   </div>
 </template>
 
 <script>
+import {id} from "vuetify/locale";
+
 export default {
   data() {
     return {
@@ -83,7 +97,8 @@ export default {
       selectedGroup: null, // For group selection
       messageInput: '',
       messages: {}, // Stores messages
-      showContacts: false, // Controls sidebar visibility for normal chat
+      showContacts: false, // Controls sidebar visibility for contacts
+      showGroups: false, // Controls sidebar visibility for groups
       showGroupModal: false, // Controls group modal visibility
       newGroupName: '', // Stores the new group name
     };
@@ -114,6 +129,13 @@ export default {
       }
     },
 
+    toggleGroups() {
+      this.showGroups = !this.showGroups;
+      if (this.showGroups) {
+        this.fetchGroups();
+      }
+    },
+
     // Add contact
     async addContact() {
       const user_id = this.getLoggedInUserId();
@@ -125,7 +147,7 @@ export default {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({user_id, contact_username}),
+          body: JSON.stringify({ user_id, contact_username }),
         });
 
         if (response.ok) {
@@ -165,16 +187,23 @@ export default {
     // Select contact for chat
     selectContact(contact) {
       this.selectedContact = contact;
+      this.fetchMessagesForContact(contact);
+    },
+
+    // Select group for chat
+    selectGroup(group) {
+      this.selectedGroup = group;
     },
 
     // Toggle contact selection for group creation
     toggleGroupContactSelection(contact) {
-      if (this.selectedContactsForGroup.includes(contact)) {
-        this.selectedContactsForGroup = this.selectedContactsForGroup.filter(c => c !== contact);
-      } else {
-        this.selectedContactsForGroup.push(contact);
-      }
-    },
+  if (this.selectedContactsForGroup.includes(contact)) {
+    this.selectedContactsForGroup = this.selectedContactsForGroup.filter(c => c !== contact);
+  } else {
+    this.selectedContactsForGroup.push(contact);
+  }
+}
+,
 
     async fetchContacts() {
       const user_id = this.getLoggedInUserId();
@@ -191,6 +220,21 @@ export default {
         }
       } catch (error) {
         console.error("Error fetching contacts:", error);
+      }
+    },
+
+    async fetchGroups() {
+      const user_id = this.getLoggedInUserId();
+      try {
+        const response = await fetch(`/api/get_groups/${user_id}`);
+        if (response.ok) {
+          const data = await response.json();
+          this.groups = data;
+        } else {
+          alert("Failed to fetch groups.");
+        }
+      } catch (error) {
+        console.error("Error fetching groups:", error);
       }
     },
 
@@ -256,7 +300,7 @@ export default {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({sender_id, receiver_id, content}),
+          body: JSON.stringify({ sender_id, receiver_id, content }),
         });
 
         if (response.ok) {
@@ -279,6 +323,32 @@ export default {
         console.error("Error sending message:", error);
       }
     },
+    // Neue Methode zum Abrufen der Nachrichten
+async fetchMessagesForContact(contact) {
+  const user_id = this.getLoggedInUserId();
+  const contact_id = contact?.id;
+
+  if (!user_id || !contact_id) {
+    console.error("User ID or Contact ID is missing.");
+    return; // Beende die Funktion, wenn eine der IDs fehlt
+  }
+
+  try {
+    const response = await fetch(`/api/get_messages/${user_id}/${contact_id}`);
+    if (response.ok) {
+      const result = await response.json();
+      this.messages[contact.username] = result.messages;
+      this.scrollChatToBottom();
+    } else {
+      console.error("Failed to fetch messages:", response.statusText);
+    }
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+  }
+}
+,
+
+
 
     async sendMessageToGroup() {
       const sender_id = this.getLoggedInUserId();
@@ -296,7 +366,7 @@ export default {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({sender_id, group_id, content}),
+          body: JSON.stringify({ sender_id, group_id, content }),
         });
 
         if (response.ok) {
@@ -332,6 +402,7 @@ export default {
 
   mounted() {
     this.fetchContacts();
+    this.fetchMessagesForContact(id);
   }
 };
 </script>
@@ -344,76 +415,51 @@ export default {
   height: 100vh;
 }
 
-/* Sidebar contact list */
+/* Sidebar contact list
 .contacts-button,
-.new-group-button {
-  margin: 10px;
+.groups-button {
+  margin: 100px;
 }
-
-/* Chat window layout */
-.selected-contact {
-  font-weight: bold;
-}
-
-.contacts-button {
-  background-color: lightblue;
-  padding: 10px;
-  border-radius: 4px;
-}
-
-.new-group-button {
-  background-color: lightgreen;
-  padding: 10px;
-  border-radius: 4px;
-}
-
-/* Modal styling */
-.modal {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  height: 100vh;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-.modal-button {
-  background-color: lightblue;
-  padding: 10px;
-  border-radius: 4px;
-  margin: 10px;
-  cursor: pointer;
-}
-
-.modal-button.cancel {
-  background-color: lightcoral;
-}
-
-/* Contact list and chat layout */
-.left-sidebar {
+*/
+.contact-sidebar {
   position: absolute;
-  top: 200px;
-  left: 250px;
-  width: 200px;
+  top: 550px;
+  left: 50px;
+  width: 150px;
+  height: 400px;
   background-color: #fff;
   border: 1px solid #ddd;
   padding: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-radius: 4px;
+  overflow-y: auto; /* Added scroll function */
 }
 
-.left-sidebar ul {
+
+.contacts-list {
   list-style: none;
   padding: 0;
 }
 
-.left-sidebar li {
+.contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-button {
+  background-color: lightcoral;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  font-size: 14px;
+  position: absolute;  /* Positionierung */
+  top: 20px;           /* Abstand vom oberen Rand */
+  left: 20px;          /* Abstand vom linken Rand */
+}
+
+.contact-sidebar li {
   padding: 8px;
   background-color: #f0f0f0;
   margin-bottom: 8px;
@@ -423,19 +469,153 @@ export default {
   color: black;
 }
 
-.left-sidebar li:hover {
+.contact-sidebar li:hover {
   background-color: #ddd;
 }
+.contact-sidebar input {
+  color: black; /* Set the input text color to black */
+}
+/* Right Sidebar for Groups */
+.group-sidebar {
+  position: absolute;
+  top: 550px;
+  left: 250px; /* Position it on the right side */
+  width: 150px;
+  height: 400px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow-y: auto; /* Added scroll function */
+}
+
+.groups-list {
+  list-style: none;
+  padding: 0;
+}
+
+.group-sidebar li {
+  padding: 8px;
+  background-color: #f0f0f0;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  color: black;
+}
+
+.group-sidebar li:hover {
+  background-color: #ddd;
+}
+
+.group-sidebar button {
+  background-color: lightgreen;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
 
 /* Delete button for each contact */
 .delete-button {
   background-color: red;
   color: white;
   border: none;
-  padding: 5px;
+  padding: 2px 5px;
   border-radius: 4px;
-  margin-left: 5px;
   cursor: pointer;
+}
+
+.selected-contact {
+  background-color: darkgrey; /* Ausgewählter Kontakt in dunklem Grau */
+  color: white; /* Schriftfarbe für ausgewählte Kontakte auf Weiß */
+}
+
+/* Kontakt-Selektionsstil in der Gruppenansicht */
+.selected-group-contact {
+  background-color: darkgrey; /* Ausgewählter Kontakt in der Gruppenansicht */
+  color: white; /* Schriftfarbe für ausgewählte Kontakte in der Gruppenansicht */
+}
+
+.contacts-button {
+  background-color: lightblue;
+  padding: 10px;
+  border-radius: 4px;
+  position: absolute;
+  top: 500px; /* Abstand vom oberen Rand */
+  left: 100px; /* Abstand vom linken Rand */
+  cursor: pointer;
+}
+
+.groups-button {
+  background-color: lightblue;
+  padding: 10px;
+  border-radius: 2px;
+  position: absolute;
+  top: 500px; /* Abstand vom oberen Rand */
+  left: 300px; /* Abstand vom linken Rand, gleiche Linie wie Contacts-Button */
+  cursor: pointer;
+}
+
+.contact-sidebar, .group-sidebar, .modal-content {
+  color: black; /* Textfarbe in den Kästen auf Schwarz setzen */
+}
+
+.contacts-list li, .groups-list li {
+  cursor: pointer;
+  padding: 8px;
+  background-color: lightgrey; /* Hellgrau für nicht ausgewählte Kontakte */
+  margin-bottom: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover-Effekt für Kontakte und Gruppen */
+.contacts-list li:hover, .groups-list li:hover {
+  background-color: darkgrey; /* Dunkleres Grau, wenn der Mauszeiger darüber ist */
+}
+
+
+.modal {
+  position: fixed;
+  top: 400px;
+  right: -100px;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border-radius: 10px;
+  z-index: 1000;
+  width: 300px; /* Gesamte Breite des Modals */
+  height: auto; /* Höhe passt sich automatisch dem Inhalt an */
+  padding: 10px; /* Kleinere Innenabstände */
+}
+.modal-content {
+  padding: 10px; /* Verringert den inneren Abstand (padding) des gesamten Modals */
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 300px; /* Breite des Modals */
+  height: auto; /* Höhe automatisch, damit sie sich dem Inhalt anpasst */
+}
+
+.modal input {
+  margin-top: 5px;
+  background-color: black;/* Verkleinerung des oberen Abstands zum Eingabefeld */
+  padding: 5px; /* Kleinere Polsterung des Eingabefelds */
+  width: 100%; /* Breite des Eingabefelds */
+}
+
+.modal-button {
+  background-color: lightblue;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.modal-button.cancel {
+  background-color: lightcoral;
 }
 
 /* Chat window without rounded corners when a chat is selected */
@@ -519,16 +699,5 @@ input[type="text"] {
 
 .send-button:hover {
   background-color: darkolivegreen;
-}
-
-/* Context menu */
-.context-menu {
-  position: absolute;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  padding: 5px;
-  z-index: 1000;
 }
 </style>
